@@ -1,0 +1,46 @@
+@layer theme, base, antd, components, utilities;
+
+@import 'tailwindcss';
+
+:root {
+	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	--nyanza: #d8f3dcff;
+	--celadon: #b7e4c7ff;
+	--celadon-2: #95d5b2ff;
+	--mint: #74c69dff;
+	--mint-2: #52b788ff;
+	--sea-green: #40916cff;
+	--dartmouth-green: #2d6a4fff;
+	--brunswick-green: #1b4332ff;
+	--dark-green: #081c15ff;
+
+}
+
+html,
+body,
+#root {
+	height: 100%;
+	margin: 0;
+}
+
+canvas {
+	width: 98vmin;
+	height: 98vmin;
+}
+
+.content {
+	height: calc(100vh - 160px);
+	/* 160px là tổng chiều cao của header và footer */
+}
+
+/* Highlight parent submenu when child is selected */
+.ant-menu-submenu-selected>.ant-menu-submenu-title {
+	background: var(--celadon);
+	color: var(--dark-green);
+}
