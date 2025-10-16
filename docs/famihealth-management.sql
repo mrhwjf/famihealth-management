@@ -14,6 +14,9 @@ CREATE TABLE `users` (
   `name` varchar(255),
   `phone` varchar(255) UNIQUE,
   `email` varchar(255) UNIQUE,
+  `profile_url` varchar(255),
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `is_locked` bool NOT NULL DEFAULT false
 );
 
@@ -60,6 +63,7 @@ CREATE TABLE `appointments` (
 CREATE TABLE `families` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `creator_id` int,
+  `name` varchar(255),
   `address` varchar(255),
   `phone` varchar(255)
 );
