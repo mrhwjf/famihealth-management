@@ -44,7 +44,7 @@ public class FamilyInviteCode {
 	@CreationTimestamp
 	private LocalDateTime createdAt;
 
-	@Column(name = "is_active")
-	private Boolean isActive;
+	@Column(name = "active")
+	private Boolean active;
 
 }

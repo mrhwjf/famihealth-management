@@ -17,7 +17,7 @@ CREATE TABLE `users` (
   `profile_url` varchar(255),
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_locked` bool NOT NULL DEFAULT false
+  `locked` bool NOT NULL DEFAULT false
 );
 
 CREATE TABLE `permissions` (
@@ -36,7 +36,7 @@ CREATE TABLE `doctor_profiles` (
   `doctor_id` int PRIMARY KEY,
   `license_number` varchar(255) NOT NULL,
   `certificate_file_url` varchar(255),
-  `is_verified` bool NOT NULL DEFAULT false
+  `verified` bool NOT NULL DEFAULT false
 );
 
 CREATE TABLE `doctor_verifications` (
@@ -71,6 +71,7 @@ CREATE TABLE `families` (
 CREATE TABLE `family_access` (
   `family_id` int,
   `user_id` int,
+  `family_creator` boolean,
   Primary key(family_id,user_id)
 );
 
@@ -192,7 +193,7 @@ CREATE TABLE `password_reset_tokens` (
   `token` varchar(255) UNIQUE NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `expires_at` datetime,
-  `is_used` boolean DEFAULT false
+  `used` boolean DEFAULT false
 );
 
 CREATE TABLE `family_invite_codes` (
@@ -201,7 +202,7 @@ CREATE TABLE `family_invite_codes` (
   `code` varchar(255) UNIQUE NOT NULL,
   `created_by` int,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `is_active` boolean DEFAULT true
+  `active` boolean DEFAULT true
 );
 
 -- ==========================================
@@ -218,8 +219,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'Quản trị viên hệ thống, có toàn quyền truy cập'),
 ('DOCTOR', 'Bác sĩ có quyền truy cập hồ sơ y tế của gia đình được liên kết'),
-('FAMILY_CREATOR', 'Người tạo và quản lý tài khoản gia đình'),
-('FAMILY_MEMBER', 'Thành viên trong gia đình do người tạo thêm vào');
+('FAMILY', 'Người tạo và quản lý tài khoản gia đình');
 
 -- =========================
 -- 2. PERMISSIONS
@@ -235,7 +235,7 @@ INSERT INTO permissions (name, description) VALUES
 -- =========================
 -- 3. ROLE_PERMISSIONS
 -- =========================
--- ADMIN có tất cả quyền
+-- ADMIN có quyền quản lí người dùng và dữ liệu danh mục
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 (1, 1),
@@ -249,17 +249,11 @@ VALUES
 (2, 5); -- VIEW_HEALTH_STATISTICS
 
 
--- FAMILY_CREATOR: quyền quản lý hồ sơ gia đình
+-- FAMILY: Quyền tạo và quản lí hồ sơ gia đình
 INSERT INTO role_permissions (role_id, permission_id)
 VALUES
 (3, 3), -- ACCESS_FAMILY_RECORDS
 (3, 4); -- CREATE_APPOINTMENT
-
--- FAMILY_MEMBER: chỉ xem được hồ sơ
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(4, 3), -- ACCESS_FAMILY_RECORDS
-(4,5); -- VIEW_HEALTH_STATISTICS
 
 -- =========================
 -- 4. VACCINES

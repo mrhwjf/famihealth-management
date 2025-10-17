@@ -12,5 +12,5 @@ public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, In
 
 	Optional<DoctorProfile> findByLicenseNumber(String licenseNumber);
 
-	List<DoctorProfile> findByIsVerified(Boolean isVerified);
+	List<DoctorProfile> findByVerified(Boolean verified);
 }

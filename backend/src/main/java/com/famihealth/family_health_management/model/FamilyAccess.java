@@ -30,6 +30,9 @@ public class FamilyAccess {
 	@Column(name = "user_id")
 	private Integer userId;
 
+	@Column(name = "family_creator")
+	private Boolean familyCreator;
+
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "family_id", insertable = false, updatable = false)
 	private Family family;

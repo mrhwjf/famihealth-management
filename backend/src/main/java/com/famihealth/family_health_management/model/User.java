@@ -64,8 +64,8 @@ public class User {
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 
-	@Column(name = "is_locked", nullable = false)
+	@Column(name = "locked", nullable = false)
 	@Builder.Default
-	private Boolean isLocked = false;
+	private Boolean locked = false;
 
 }

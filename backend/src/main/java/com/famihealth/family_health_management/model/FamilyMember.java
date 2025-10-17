@@ -2,7 +2,12 @@ package com.famihealth.family_health_management.model;
 
 import java.time.LocalDate;
 
+import com.famihealth.family_health_management.enums.BloodType;
+import com.famihealth.family_health_management.enums.Gender;
+import com.famihealth.family_health_management.utils.BloodTypeConverter;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -10,6 +15,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -46,10 +53,12 @@ public class FamilyMember {
 	private LocalDate dob;
 
 	@Column(name = "gender")
-	private String gender;
+	@Enumerated(EnumType.STRING)
+	private Gender gender;
 
-	@Column(name = "blood_type")
-	private String bloodType;
+	@Column(name = "blood_type", columnDefinition = "ENUM('A+','A-','B+','B-','AB+','AB-','O+','O-')")
+	@Convert(converter = BloodTypeConverter.class)
+	private BloodType bloodType;
 
 	@Column(name = "phone")
 	private String phone;

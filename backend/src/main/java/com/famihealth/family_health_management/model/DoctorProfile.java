@@ -31,7 +31,7 @@ public class DoctorProfile {
 	@Column(name = "certificate_file_url")
 	private String certificateFileUrl;
 
-	@Column(name = "is_verified", nullable = false)
-	private Boolean isVerified = false;
+	@Column(name = "verified", nullable = false)
+	private Boolean verified = false;
 
 }

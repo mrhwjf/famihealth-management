@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.famihealth.family_health_management.enums.VerificationStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -39,7 +43,8 @@ public class DoctorVerification {
 	private User admin;
 
 	@Column(name = "status")
-	private String status; // PENDING, APPROVED, REJECTED
+	@Enumerated(EnumType.STRING)
+	private VerificationStatus status; // PENDING, APPROVED, REJECTED
 
 	@Column(name = "submitted_at", updatable = false)
 	@CreationTimestamp

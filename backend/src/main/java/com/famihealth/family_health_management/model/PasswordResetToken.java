@@ -43,7 +43,7 @@ public class PasswordResetToken {
 	@Column(name = "expires_at")
 	private LocalDateTime expiresAt;
 
-	@Column(name = "is_used")
-	private Boolean isUsed;
+	@Column(name = "used")
+	private Boolean used;
 
 }

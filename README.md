@@ -17,7 +17,7 @@ This system helps families manage their members’ **medical records**, **vaccin
   - Component-based UI
   - Axios for API communication
 - **Database**: MySQL  
-  Schema defined in [`famihealth-management.sql`](./famihealth-management.sql)
+  Schema defined in [`famihealth-management.sql`](./docs/famihealth-management.sql)
 
 ---
 

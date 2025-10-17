@@ -18,5 +18,5 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	List<User> findByRole_Id(Integer roleId);
 
-	List<User> findByIsLocked(Boolean isLocked);
+	List<User> findByLocked(Boolean locked);
 }

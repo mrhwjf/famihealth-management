@@ -14,5 +14,5 @@ public interface FamilyInviteCodeRepository extends JpaRepository<FamilyInviteCo
 
 	List<FamilyInviteCode> findByCreatedBy_Id(Integer createdById);
 
-	List<FamilyInviteCode> findByIsActive(Boolean isActive);
+	List<FamilyInviteCode> findByActive(Boolean active);
 }
