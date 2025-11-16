@@ -2,6 +2,8 @@ package com.famihealth.family_health_management.dto.response.family_member;
 
 import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.famihealth.family_health_management.enums.Gender;
+import com.famihealth.family_health_management.enums.BloodType;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,8 +19,8 @@ public class FamilyMemberSummaryDto {
 	private String name;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate dob;
-	private String gender;
-	private String bloodType;
+	private Gender gender;
+	private BloodType bloodType;
 	private String phone;
 	private String relationshipToCreator;
 }

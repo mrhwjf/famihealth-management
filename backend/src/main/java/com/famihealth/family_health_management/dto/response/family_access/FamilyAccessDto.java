@@ -5,12 +5,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class FamilyAccessDto {
-	private Integer familyId;
 	private Integer userId;
-	private Boolean familyCreator;
+	private List<FamilyInfo> families;
+
+	@Data
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
+	public static class FamilyInfo {
+		private Integer familyId;
+		private Boolean familyCreator;
+		private String accessType;
+	}
 }

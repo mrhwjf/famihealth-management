@@ -1,7 +1,9 @@
 package com.famihealth.family_health_management.repository;
 
 import java.util.Optional;
-import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -16,7 +18,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
 	boolean existsByPhone(String phone);
 
-	List<User> findByRole_Id(Integer roleId);
+	Page<User> findByRole_Id(Integer roleId, Pageable pageable);
 
-	List<User> findByLocked(Boolean locked);
+	Page<User> findByLocked(Boolean locked, Pageable pageable);
+
+	Page<User> findByEmailContainingIgnoreCase(String keyword, Pageable pageable);
+
+	Page<User> findByPhoneContainingIgnoreCase(String keyword, Pageable pageable);
+
+	Page<User> findByNameContainingIgnoreCase(String keyword, Pageable pageable);
 }

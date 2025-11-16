@@ -2,7 +2,8 @@ package com.famihealth.family_health_management.dto.response.family_member;
 
 import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import java.util.Set;
+import com.famihealth.family_health_management.enums.Gender;
+import com.famihealth.family_health_management.enums.BloodType;
 
 import com.famihealth.family_health_management.dto.response.family.FamilySummaryDto;
 import com.famihealth.family_health_management.dto.response.relationships_to_creator.RelationshipsToCreatorDto;
@@ -25,8 +26,7 @@ public class FamilyMemberDetailDto {
 	private String name;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate dob;
-	private String gender;
-	private String bloodType;
+	private Gender gender;
+	private BloodType bloodType;
 	private String phone;
-	private Set<UserSummaryDto> doctors;
 }

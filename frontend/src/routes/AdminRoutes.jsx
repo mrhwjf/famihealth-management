@@ -1,7 +1,7 @@
 import React from 'react'
-import AdminLayout from '../layouts/admin/AdminLayout';
-import Dashboard from '../pages/admin/Dashboard';
-import FamilyUsersPage from '../pages/admin/FamilyUsersPage';
+import AdminLayout from '../layouts/AdminLayout';
+import Dashboard from '../pages/Dashboard';
+import FamilyUsersPage from '../pages/FamilyUsersPage';
 
 const AdminRoutes = {
 	children: [

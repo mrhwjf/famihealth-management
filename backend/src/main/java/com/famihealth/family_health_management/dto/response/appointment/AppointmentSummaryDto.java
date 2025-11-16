@@ -2,6 +2,7 @@ package com.famihealth.family_health_management.dto.response.appointment;
 
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.famihealth.family_health_management.enums.AppointmentStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,6 @@ public class AppointmentSummaryDto {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime appointmentDatetime;
 	private String location;
-	private String status;
+	private AppointmentStatus status;
 	private String notes;
 }

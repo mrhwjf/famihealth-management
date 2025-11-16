@@ -1,5 +1,6 @@
 package com.famihealth.family_health_management.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,12 +10,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import java.util.Set;
-import java.util.HashSet;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,10 +36,6 @@ public class User {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "role_id")
 	private Role role;
-
-	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-	@lombok.Builder.Default
-	private Set<FamilyAccess> accessEntries = new HashSet<>();
 
 	@Column(name = "password_hash")
 	private String passwordHash;
@@ -67,5 +63,8 @@ public class User {
 	@Column(name = "locked", nullable = false)
 	@Builder.Default
 	private Boolean locked = false;
+
+	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+	private DoctorProfile doctorProfile;
 
 }
