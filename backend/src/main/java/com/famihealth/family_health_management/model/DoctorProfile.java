@@ -2,9 +2,11 @@ package com.famihealth.family_health_management.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 import lombok.AllArgsConstructor;
@@ -21,10 +23,6 @@ public class DoctorProfile {
 	@Id
 	private Integer doctorId;
 
-	@OneToOne
-	@JoinColumn(name = "doctor_id", insertable = false, updatable = false)
-	private User doctor;
-
 	@Column(name = "license_number", nullable = false)
 	private String licenseNumber;
 
@@ -34,4 +32,8 @@ public class DoctorProfile {
 	@Column(name = "verified", nullable = false)
 	private Boolean verified = false;
 
+	@OneToOne(fetch = FetchType.LAZY)
+	@MapsId
+	@JoinColumn(name = "doctor_id")
+	private User doctor;
 }

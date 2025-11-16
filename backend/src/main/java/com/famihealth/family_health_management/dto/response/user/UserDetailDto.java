@@ -3,7 +3,8 @@ package com.famihealth.family_health_management.dto.response.user;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-import com.famihealth.family_health_management.dto.response.role.RoleDto;
+import com.famihealth.family_health_management.dto.response.role.RoleSummaryDto;
+import com.famihealth.family_health_management.dto.response.doctor_profile.DoctorProfileSummaryDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserDetailDto {
 	private Integer id;
-	private RoleDto role; // master table
+	private RoleSummaryDto role; // master table
 	private String name;
 	private String phone;
 	private String email;
@@ -26,4 +27,5 @@ public class UserDetailDto {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime updatedAt;
 	private Boolean locked;
+	private DoctorProfileSummaryDto doctorProfile; // only for doctor role
 }

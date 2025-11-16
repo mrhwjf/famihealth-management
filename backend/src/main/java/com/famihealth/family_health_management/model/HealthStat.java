@@ -34,7 +34,7 @@ public class HealthStat {
 	@JoinColumn(name = "family_member_id")
 	private FamilyMember familyMember;
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "stats_type_id")
 	private HealthStatsType statsType;
 

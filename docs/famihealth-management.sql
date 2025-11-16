@@ -355,6 +355,22 @@ INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal
 ('Chiều cao', 'cm', null, null, 'Chiều cao cơ thể con người'),
 ('Cân nặng', 'kg', null, null, 'Cân nặng cơ thể con người');
 
+-- =========================
+-- 9. USERS
+-- =========================
+INSERT INTO users (role_id, password_hash, name, phone, email, profile_url, locked) VALUES
+(1, 'admin_hashed_password', 'Admin User', '0123456789', 'admin@example.com', 'http://example.com/profile/admin', false),
+(2, 'doctor_hashed_password', 'Dr. John Doe', '0987654321', 'doctor@example.com', 'http://example.com/profile/doctor', false),
+(3, 'family_hashed_password', 'Family Creator User', '0112233445', 'family@example.com', 'http://example.com/profile/family', false),
+(3, 'member_hashed_password', 'Family Member User', '0223344556', 'member@example.com', 'http://example.com/profile/member', false);
+
+-- =========================
+-- 10. DOCTOR_PROFILES
+-- =========================
+INSERT INTO doctor_profiles (doctor_id, license_number, certificate_file_url, verified) VALUES
+(2, 'DOC123456', 'http://example.com/certificates/doc_john_doe.pdf', true);
+
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 

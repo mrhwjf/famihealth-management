@@ -1,7 +1,5 @@
 package com.famihealth.family_health_management.dto.response.role;
 
-import java.util.Set;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,9 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RoleDto {
+public class RoleSummaryDto {
 	private Integer id;
 	private String name;
 	private String description;
-	private Set<Integer> permissionIds;
 }
