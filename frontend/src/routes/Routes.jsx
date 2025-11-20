@@ -1,6 +1,5 @@
 import AdminRoutes from "./AdminRoutes";
 import ErrorRoutes from "./ErrorRoutes";
-
-const Routes = [AdminRoutes, ErrorRoutes];
-
+import UserFamilyRoutes from "./UserFamilyRoutes";
+const Routes = [AdminRoutes, ErrorRoutes, UserFamilyRoutes];
 export default Routes;

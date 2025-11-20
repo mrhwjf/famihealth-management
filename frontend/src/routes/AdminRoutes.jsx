@@ -14,7 +14,7 @@ const AdminRoutes = {
 					element: <Dashboard />
 				},
 				{
-					path: 'users',
+					path: 'user',
 					element: <FamilyUsersPage />
 				}
 			]
