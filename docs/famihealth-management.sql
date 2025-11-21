@@ -34,7 +34,7 @@ CREATE TABLE `role_permissions` (
 
 CREATE TABLE `doctor_profiles` (
   `doctor_id` int PRIMARY KEY,
-  `license_number` varchar(255) NOT NULL,
+  `license_number` varchar(255),
   `certificate_file_url` varchar(255),
   `verified` bool NOT NULL DEFAULT false
 );
@@ -410,7 +410,7 @@ ALTER TABLE `family_members` ADD FOREIGN KEY (`relationship_to_creator_id`) REFE
 
 ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`vacc_id`) REFERENCES `vaccines` (`id`);
+ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`vacc_id`) REFERENCES `vaccines` (`id`) ON DELETE SET NULL;
 
 ALTER TABLE `medical_records` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
@@ -426,7 +426,7 @@ ALTER TABLE `allergies` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_
 
 ALTER TABLE `health_stats` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `health_stats` ADD FOREIGN KEY (`stats_type_id`) REFERENCES `health_stats_types` (`id`);
+ALTER TABLE `health_stats` ADD FOREIGN KEY (`stats_type_id`) REFERENCES `health_stats_types` (`id`) ON DELETE RESTRICT;
 
 ALTER TABLE `password_reset_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 

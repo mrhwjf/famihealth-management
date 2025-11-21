@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class DoctorProfileSummaryDto {
+	private Integer doctorId; // DoctorProfile id
 	private String name; // Doctor's name, taken from User entity, field 'name'
 	private String licenseNumber;
 	private String certificateFileUrl;

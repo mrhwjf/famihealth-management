@@ -1,7 +1,6 @@
-package com.famihealth.family_health_management.dto.response.doctor_profile;
+package com.famihealth.family_health_management.dto.request.doctor_profile;
 
-import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,9 +10,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DoctorProfileDetailDto {
-	private UserSummaryDto user;
+public class DoctorProfileUpdateRequest {
+
+	@NotNull
 	private String licenseNumber;
+
+	@NotNull
 	private String certificateFileUrl;
+
+	@NotNull
 	private Boolean verified;
 }

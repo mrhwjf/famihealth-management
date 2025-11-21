@@ -3,7 +3,6 @@ package com.famihealth.family_health_management.model;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import com.famihealth.family_health_management.enums.VerificationStatus;
 
@@ -51,7 +50,6 @@ public class DoctorVerification {
 	private LocalDateTime submittedAt;
 
 	@Column(name = "reviewed_at", nullable = true)
-	@UpdateTimestamp
 	private LocalDateTime reviewedAt;
 
 	@Column(name = "remarks")

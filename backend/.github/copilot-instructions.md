@@ -40,7 +40,7 @@ Defintions:
     | Form (for Create/Update) response DTO | `FormDto` | `MedicalRecordFormDto` |
     | Create request DTO | `CreateRequest` | `FamilyMemberCreateRequest` |
     | Update request DTO | `UpdateRequest` | `FamilyMemberUpdateRequest` |
-    | Search/filter request DTO | `SearchRequest` / `FilterRequest` | `FilterAppointmentRequest` |
+    | Filter request DTO | `FilterRequest` | `FilterAppointmentRequest` |
 
   - Avoid putting `id` in create/update request DTOs — use path variables for updates.
   - Normal Dto: flat DTO with only IDs for relationships (lightweight, i.e., display the id of the doctor instead of the name of the doctor). Mostly used for create/update operations + validation annotations.
