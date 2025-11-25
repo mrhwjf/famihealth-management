@@ -9,6 +9,8 @@ import Vaccinations from "../pages/user/Vaccinations";
 import Appointments from "../pages/user/Appointments";
 import Settings from "../pages/user/Settings";
 import Signout from "../pages/user/Signout";
+import MemberProfile from "../pages/user/MemberProfile";
+import MemberMedicalRecords from "../pages/user/MemberMedicalRecords";
 const UserFamilyRoutes = {
   children: [
     {
@@ -51,6 +53,14 @@ const UserFamilyRoutes = {
           path: "signout",
           element: <Signout />,
         },
+        {
+          path: "memberprofile/:id",
+          element: <MemberProfile />,
+        },
+        {
+          path: "medical-records/:id",
+          element: <MemberMedicalRecords />,
+        }
       ],
     },
   ],

@@ -13,7 +13,7 @@ const NotFound = () => {
 				subTitle="Trang bạn tìm kiếm không có."
 				extra={
 					// Assume user is admin
-					<Button type="primary" onClick={() => navigate("/")}>
+					<Button type="primary" onClick={() => navigate("/user_family")}>
 						Quay lại trang chủ
 					</Button>
 				}

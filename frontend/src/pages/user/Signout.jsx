@@ -1,6 +1,11 @@
+// pages/user/Signout.jsx (SignoutModal)
 import React from "react";
-import useIsMobile from '../../hooks/useIsMobile';
+import { Modal, Typography } from "antd";
+
+const { Text } = Typography;
+
 export default function Signout() {
-  const isMobile = useIsMobile();
-  return <div>Signout Page</div>;
+  return (
+    console.log("Log out")
+  );
 }

@@ -1,5 +1,6 @@
 // StoreLayout.jsx
 import React, { useState } from "react";
+
 import useIsMobile from "../../hooks/useIsMobile";
 import {
   Layout,
@@ -12,6 +13,11 @@ import {
   Col,
   Card,
   Avatar,
+  Space,
+  Select,
+  Flex,
+  Calendar,
+  theme,
 } from "antd";
 import {
   MenuOutlined,
@@ -23,8 +29,13 @@ import {
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Meta } = Card;
+//Calendar onPanelChange function
+const onPanelChange = (value, mode) => {
+  console.log(value.format("YYYY-MM-DD"), mode);
+};
 //fake data
 //1. Family Overview data
+
 const FamilyOverview_data = {
   familyName: "3 ae lọ chéo Family",
   address: "273 An Dương Vương",
@@ -35,6 +46,7 @@ const FamilyOverview_data = {
 //2. Family Members data
 const FamilyMembers_data = [
   {
+    familyID: "1",
     name: "Nguyễn Grass",
     relationship: "Father",
     age: 20,
@@ -43,8 +55,9 @@ const FamilyMembers_data = [
     cardImage: "src/pages/user/namaste-dog-smiling.png", //add image later
   },
   {
+    familyID: "1",
     name: "Nguyễn Hữu Phong",
-    relationship: "Mother",
+    relationship: "Wife",
     age: 19,
     gender: "Female",
     bloodType: "A-",
@@ -53,6 +66,7 @@ const FamilyMembers_data = [
       "src/pages/user/2d8fda44-a143-4a14-93a7-e9d035b23fff-1676957756500.webp",
   },
   {
+    familyID: "1",
     name: "Hồ Thanh Thái",
     relationship: "Son",
     age: 18,
@@ -62,6 +76,7 @@ const FamilyMembers_data = [
       "src/pages/user/static-images.vnncdn.net-vps_images_publish-000001-000003-2025-11-4-_pho-anh-hai-1111.jpg", //add image later
   },
   {
+    familyID: "1",
     name: "Đỗ Thiên Phú",
     relationship: "Daughter",
     age: 17,
@@ -115,14 +130,6 @@ const UpcomingAppointments_data = [
     status: "Cancelled",
     //Book new appointment button can be added later
   },
-  {
-    name: "Hồ Thanh Thái",
-    doctorName: "Dr. Trần Thị Hương",
-    date: "25/12/2023",
-    time: "2:00 PM",
-    status: "Completed",
-    //Book new appointment button can be added later
-  },
 ];
 //5. Recent Medical Records data
 const RecentMedicalRecords_data = [
@@ -171,148 +178,200 @@ export default function Dashboard() {
   const isMobile = useIsMobile();
 
   return (
-    console.log(FamilyMembers_data.length),
-    (
-      <Layout style={{ minHeight: "100vh" }}>
-        <Layout>
-          <Content style={{ margin: "16px" }}>
-            <Row gutter={[16, 16]}>
-              {/* Family Overview Cards Grid */}
-              <Col span={24}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Family Overview" description={null} />
-                  <div>
-                    <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
-                      <li>Family Name: {FamilyOverview_data.familyName}</li>
-                      <li>Address: {FamilyOverview_data.address}</li>
-                      <li>Contact Phone: {FamilyOverview_data.contactPhone}</li>
-                      <li>
-                        Linked Doctors Count:{" "}
-                        {FamilyOverview_data.linkedDoctorsCount}
-                      </li>
-                    </ul>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Layout>
+        <Content style={{ margin: "16px" }}>
+          <Row gutter={[16, 16]}>
+            {/* Family Overview Cards Grid */}
+            <Col span={isMobile ? 24 : 7}>
+              <Card className="hover-expand-card" hoverable>
+                <Meta title="Family Overview" description={null} />
+                <div>
+                  <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
+                    <li>Family Name: {FamilyOverview_data.familyName}</li>
+                    <li>Address: {FamilyOverview_data.address}</li>
+                    <li>Contact Phone: {FamilyOverview_data.contactPhone}</li>
+                    <li>
+                      Linked Doctors Count:{" "}
+                      {FamilyOverview_data.linkedDoctorsCount}
+                    </li>
+                  </ul>
+                </div>
+                <div style={{ marginTop: "20px" }}>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Input placeholder="Family invite code" />
+                    <Button type="primary" style={{ marginBottom: "1.5px" }}>
+                      Submit
+                    </Button>
+                  </Space.Compact>
+                </div>
+              </Card>
+            </Col>
+            {/* Upcoming Appointments Cards Grid */}
+            <Col span={isMobile ? 24 : 17}>
+              <Card className="hover-expand-card" hoverable>
+                {isMobile ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 30,
+                    }}>
+                    <div>
+                      <Meta title="Upcoming Appointments" description={null} />
+                      <ul className="list-disc ml-5 mt-2">
+                        {UpcomingAppointments_data.map((appointment, index) => (
+                          <li key={index}>
+                            {appointment.name} have an appointment with <br />{" "}
+                            {appointment.doctorName} - {appointment.date} at{" "}
+                            {appointment.time} - {appointment.status}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div style={{ marginTop: "20px" }}>
+                      {/* Calender */}
+                      <Meta title="Book new appointment" description={null} />
+                      <div style={{ width: 300, marginTop: "10px" }}>
+                        <Calendar
+                          fullscreen={false}
+                          onPanelChange={onPanelChange}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </Card>
-              </Col>
-              {/* Alerts & Health Reminders Cards Grid */}
-              <Col span={24}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Alerts & Health Reminders" description={null} />
-                  <div>
-                    <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
-                      <li>Upcoming dental check: 20/11</li>
-                      <li>Kid's vaccine reminder: 25/12</li>
-                      <li>Blood pressure recheck recommended</li>
-                    </ul>
-                  </div>
-                </Card>
-              </Col>
-              {/* Family Members Cards Grid */}
-              <Col span={24}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Family Members" description={null} />
+                ) : (
+                  <Flex gap={30}>
+                    <div>
+                      <Meta title="Upcoming Appointments" description={null} />
+                      <ul className="list-disc ml-5 mt-2">
+                        {UpcomingAppointments_data.map((appointment, index) => (
+                          <li key={index}>
+                            {appointment.name} have an appointment with <br />{" "}
+                            {appointment.doctorName} - {appointment.date} at{" "}
+                            {appointment.time} - {appointment.status}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div style={{ marginTop: "20px" }}>
+                      {/* Calender */}
+                      <Meta title="Book new appointment" description={null} />
+                      <div style={{ width: 300, marginTop: "10px" }}>
+                        <Calendar
+                          fullscreen={false}
+                          onPanelChange={onPanelChange}
+                        />
+                      </div>
+                    </div>
+                  </Flex>
+                )}
+              </Card>
+            </Col>
+            {/* Family Members Cards Grid */}
+            <Col span={24}>
+              <Card className="">
+                <Meta title="Family Members" description={null} />
 
-                  <Row gutter={[16, 16]} style={{ marginTop: "12px" }}>
-                    {FamilyMembers_data.slice(0, 4).map((member, index) => (
-                      <Col key={index} span={12}>
-                        <Card className="hover-expand-card" hoverable>
-                          <img
-                            src={member.cardImage}
-                            className="card-image"
-                            alt=""
+                <Row gutter={[16, 16]} style={{ marginTop: "12px" }}>
+                  {FamilyMembers_data.slice(0, 4).map((member, index) => (
+                    <Col key={index} span={isMobile ? 24 : 12}>
+                      <Card className="hover-expand-card" hoverable>
+                        <img
+                          src={member.cardImage}
+                          className="card-image"
+                          alt={member.name}
+                          style={{
+                            width: "80%",
+                            height: "280px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <h1 style={{ fontSize: "16px", fontWeight: "bold" }}>
+                          {member.name}
+                        </h1>
+                        <div>
+                          <ul
                             style={{
-                              width: "80%",
-                              height: "280px",
-                              objectFit: "cover",
-                            }}
-                          />
-                          <h1 style={{ fontSize: "16px", fontWeight: "bold" }}>
-                            {member.name}
-                          </h1>
-                          <div>
-                            <ul
-                              style={{
-                                listStyle: "disc",
-                                paddingLeft: "20px",
-                              }}>
-                              <li>Relationship: {member.relationship}</li>
-                              <li>Age: {member.age}</li>
-                              <li>Gender: {member.gender}</li>
-                              <li>Blood Type: {member.bloodType}</li>
-                            </ul>
-                          </div>
-                        </Card>
-                      </Col>
-                    ))}
-                  </Row>
-                </Card>
-              </Col>
-
-              {/* Upcoming Appointments Cards Grid */}
-              <Col span={12}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Upcoming Appointments" description={null} />
+                              listStyle: "disc",
+                              paddingLeft: "20px",
+                            }}>
+                            <li>FamilyID: {member.familyID}</li>
+                            <li>Relationship: {member.relationship}</li>
+                            <li>Age: {member.age}</li>
+                            <li>Gender: {member.gender}</li>
+                            <li>Blood Type: {member.bloodType}</li>
+                          </ul>
+                        </div>
+                      </Card>
+                    </Col>
+                  ))}
+                </Row>
+              </Card>
+            </Col>
+            {/* Recent Medical Records Cards Grid */}
+            <Col span={isMobile ? 24 : 12}>
+              <Card className="hover-expand-card" hoverable>
+                <Meta title="Recent Medical Records" description={null} />
+                <div>
                   <ul className="list-disc ml-5 mt-2">
-                    {UpcomingAppointments_data.map((appointment, index) => (
-                      <li key={index}>
-                        {appointment.name} have an appointment with <br />{" "}
-                        {appointment.doctorName} - {appointment.date} at{" "}
-                        {appointment.time} - {appointment.status}
+                    {RecentMedicalRecords_data.map((record) => (
+                      <li>
+                        {record.name} - {record.visitDate} - {record.facility} -{" "}
+                        {record.diagnosis} - {record.doctor}
                       </li>
                     ))}
                   </ul>
-                </Card>
-              </Col>
-              {/* Vaccination Summary Cards Grid */}
-              <Col span={12}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Vaccination Summary" description={null} />
-                  <div>
-                    <ul className="list-disc ml-5 mt-2">
+                </div>
+              </Card>
+            </Col>
+
+            {/* Vaccination Summary Cards Grid */}
+            <Col span={isMobile ? 24 : 12}>
+              <Card className="hover-expand-card" hoverable>
+                <Meta title="Vaccination Summary" description={null} />
+                <div>
+                  <ul className="list-disc ml-5 mt-2">
+                    <li>
+                      Total Vaccines Completed:{" "}
+                      {VaccinationSummary_data.TotalVaccinesCompleted}
+                    </li>
+                    <li>
+                      Upcoming Vaccines:{" "}
+                      {VaccinationSummary_data.UpcomingVaccines}
+                    </li>
+                    <li>
+                      Overdues Vaccines:{" "}
+                      {VaccinationSummary_data.OverduesVaccines}
+                    </li>
+                    {Object.keys(
+                      VaccinationSummary_data.NextVaccineDueDates
+                    ).map((key) => (
                       <li>
-                        Total Vaccines Completed:{" "}
-                        {VaccinationSummary_data.TotalVaccinesCompleted}
+                        {key}:{" "}
+                        {VaccinationSummary_data.NextVaccineDueDates[key]}
                       </li>
-                      <li>
-                        Upcoming Vaccines:{" "}
-                        {VaccinationSummary_data.UpcomingVaccines}
-                      </li>
-                      <li>
-                        Overdues Vaccines:{" "}
-                        {VaccinationSummary_data.OverduesVaccines}
-                      </li>
-                      {Object.keys(
-                        VaccinationSummary_data.NextVaccineDueDates
-                      ).map((key) => (
-                        <li>
-                          {key}:{" "}
-                          {VaccinationSummary_data.NextVaccineDueDates[key]}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              </Col>
-              {/* Recent Medical Records Cards Grid */}
-              <Col span={12}>
-                <Card className="hover-expand-card" hoverable>
-                  <Meta title="Recent Medical Records" description={null} />
-                  <div>
-                    <ul className="list-disc ml-5 mt-2">
-                      {RecentMedicalRecords_data.map((record) => (
-                        <li>
-                          {record.name} - {record.visitDate} - {record.facility}{" "}
-                          - {record.diagnosis} - {record.doctor}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              </Col>
-            </Row>
-          </Content>
-        </Layout>
+                    ))}
+                  </ul>
+                </div>
+              </Card>
+            </Col>
+            {/* Alerts & Health Reminders Cards Grid */}
+            <Col span={24}>
+              <Card className="hover-expand-card" hoverable>
+                <Meta title="Alerts & Health Reminders" description={null} />
+                <div>
+                  <ul style={{ listStyle: "disc", paddingLeft: "20px" }}>
+                    <li>Upcoming dental check: 20/11</li>
+                    <li>Kid's vaccine reminder: 25/12</li>
+                    <li>Blood pressure recheck recommended</li>
+                  </ul>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        </Content>
       </Layout>
-    )
+    </Layout>
   );
 }

@@ -30,7 +30,7 @@ const { Title, Text } = Typography;
 export default function MyProfile({ currentUser }) {
   const fallback = {
     displayName: "Nguyễn Grass",
-    email: "thisisarandomassemail.com",
+    email: "thisisarandomass@email.com",
     phone: "0912345678",
     address: "273 An Dương Vương",
     dob: "2005-07-04",
