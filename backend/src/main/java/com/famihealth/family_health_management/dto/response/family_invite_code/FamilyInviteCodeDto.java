@@ -16,8 +16,7 @@ public class FamilyInviteCodeDto {
 	private Integer id;
 	private Integer familyId;
 	private String code;
-	private Integer createdBy;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 	private Boolean active;
 }

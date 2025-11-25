@@ -19,7 +19,6 @@ public interface UserMapper {
 
 	UserDetailDto toDetailDto(User entity);
 
-	@Mapping(target = "role", source = "role.name")
 	UserSummaryDto toSummaryDto(User entity);
 
 	@Mapping(target = "userDetails", source = "entity")
@@ -32,6 +31,8 @@ public interface UserMapper {
 	@Mapping(target = "locked", ignore = true)
 	@Mapping(target = "role", ignore = true)
 	@Mapping(target = "doctorProfile", ignore = true)
+	@Mapping(target = "authProvider", ignore = true)
+	@Mapping(target = "providerId", ignore = true)
 	User toEntity(UserCreateRequest req);
 
 	@Mapping(target = "passwordHash", ignore = true)
@@ -41,5 +42,7 @@ public interface UserMapper {
 	@Mapping(target = "locked", ignore = true)
 	@Mapping(target = "role", ignore = true)
 	@Mapping(target = "doctorProfile", ignore = true)
+	@Mapping(target = "authProvider", ignore = true)
+	@Mapping(target = "providerId", ignore = true)
 	void updateEntityFromDto(UserUpdateRequest dto, @MappingTarget User entity);
 }

@@ -91,7 +91,7 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public PageResponse<UserSummaryDto> getAll(UserFilterRequest filter, Pageable pageable) {
-		Specification<User> spec = UserSpecs.filter(filter); // always create spec
+		Specification<User> spec = UserSpecs.byFilter(filter); // always create spec
 		Page<User> result = userRepository.findAll(spec, pageable);
 		return PageResponseMapper.fromPage(result, userMapper::toSummaryDto);
 	}

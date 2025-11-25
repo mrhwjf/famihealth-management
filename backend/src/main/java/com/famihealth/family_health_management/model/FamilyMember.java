@@ -62,4 +62,7 @@ public class FamilyMember {
 
 	@Column(name = "phone")
 	private String phone;
+
+	@Column(name = "profile_url")
+	private String profileUrl;
 }

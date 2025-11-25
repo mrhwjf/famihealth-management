@@ -21,4 +21,5 @@ public class FamilyMemberSummaryDto {
 	private String bloodType;
 	private String phone;
 	private String relationshipToCreator;
+	private String profileUrl;
 }

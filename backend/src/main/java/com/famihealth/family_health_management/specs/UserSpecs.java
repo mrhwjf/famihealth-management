@@ -16,7 +16,7 @@ import com.famihealth.family_health_management.model.User_;
 
 public class UserSpecs {
 
-	public static Specification<User> filter(UserFilterRequest filter) {
+	public static Specification<User> byFilter(UserFilterRequest filter) {
 		return (root, query, cb) -> {
 			List<Predicate> predicates = new ArrayList<>();
 

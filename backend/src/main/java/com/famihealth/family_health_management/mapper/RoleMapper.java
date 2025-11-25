@@ -36,6 +36,10 @@ public interface RoleMapper {
 				.collect(Collectors.toSet());
 	}
 
+	default String toName(Role role) {
+		return role != null ? role.getName() : null;
+	}
+
 	// Create/Update mappings from request DTOs
 	@Mapping(target = "id", ignore = true)
 	@Mapping(target = "permissions", ignore = true)

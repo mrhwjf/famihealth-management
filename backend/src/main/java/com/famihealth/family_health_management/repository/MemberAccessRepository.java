@@ -11,4 +11,6 @@ public interface MemberAccessRepository extends JpaRepository<MemberAccess, Memb
 	List<MemberAccess> findByDoctorId(Integer doctorId);
 
 	void deleteByMemberIdAndDoctorId(Integer memberId, Integer doctorId);
+
+	boolean existsByMemberIdAndDoctorId(Integer memberId, Integer doctorId);
 }

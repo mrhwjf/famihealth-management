@@ -8,6 +8,4 @@ import com.famihealth.family_health_management.model.MedicalDocument;
 
 public interface MedicalDocumentRepository extends JpaRepository<MedicalDocument, Integer> {
 	List<MedicalDocument> findByMedicalRecord_Id(Integer medicalRecordId);
-
-	List<MedicalDocument> findByFileType(String fileType);
 }

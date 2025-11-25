@@ -17,7 +17,10 @@ CREATE TABLE `users` (
   `profile_url` varchar(255),
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `locked` bool NOT NULL DEFAULT false
+  `locked` bool NOT NULL DEFAULT false,
+
+  `auth_provider` enum('GOOGLE','FACEBOOK') DEFAULT NULL,
+  `provider_id` varchar(255) DEFAULT NULL
 );
 
 CREATE TABLE `permissions` (
@@ -90,7 +93,8 @@ CREATE TABLE `family_members` (
   `dob` date,
   `gender` enum('MALE','FEMALE','OTHER'),
   `blood_type` enum('A+','A-','B+','B-','AB+','AB-','O+','O-'),
-  `phone` varchar(255)
+  `phone` varchar(255),
+  `profile_url` varchar(255)
 );
 
 CREATE TABLE `relationships_to_creator` (
@@ -198,10 +202,9 @@ CREATE TABLE `password_reset_tokens` (
 
 CREATE TABLE `family_invite_codes` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
-  `family_id` int,
+  `family_id` int NOT NULL UNIQUE, -- ensures one active code per family
   `code` varchar(255) UNIQUE NOT NULL,
-  `created_by` int,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `active` boolean DEFAULT true
 );
 
@@ -374,11 +377,11 @@ INSERT INTO doctor_profiles (doctor_id, license_number, certificate_file_url, ve
 SET FOREIGN_KEY_CHECKS = 1;
 
 
-ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
+ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT;
 
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
+ALTER TABLE `role_permissions` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`);
+ALTER TABLE `role_permissions` ADD FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE;
 
 ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
@@ -432,6 +435,5 @@ ALTER TABLE `password_reset_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `user
 
 ALTER TABLE `family_invite_codes` ADD FOREIGN KEY (`family_id`) REFERENCES `families` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `family_invite_codes` ADD FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
 ALTER TABLE `medical_records` ADD FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL;
+

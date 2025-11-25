@@ -2,6 +2,11 @@ package com.famihealth.family_health_management.dto.response.medical_record;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
+import com.famihealth.family_health_management.dto.response.medical_document.MedicalDocumentDto;
+import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
@@ -15,8 +20,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MedicalRecordDto {
 	private Integer id;
-	private Integer familyMemberId;
-	private Integer doctorId;
+	private FamilyMemberSummaryDto familyMember;
+	private UserSummaryDto doctor;
 	private Integer facilityId;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate date;
@@ -29,5 +34,5 @@ public class MedicalRecordDto {
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime updatedAt;
 
-	// Omitting prescriptions and documents for brevity
+	List<MedicalDocumentDto> medicalDocuments;
 }

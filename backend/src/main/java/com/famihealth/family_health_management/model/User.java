@@ -3,6 +3,8 @@ package com.famihealth.family_health_management.model;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +17,8 @@ import jakarta.persistence.OneToOne;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.famihealth.family_health_management.enums.AuthProvider;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -63,6 +67,13 @@ public class User {
 	@Column(name = "locked", nullable = false)
 	@Builder.Default
 	private Boolean locked = false;
+
+	@Column(name = "auth_provider")
+	@Enumerated(EnumType.STRING)
+	private AuthProvider authProvider;
+
+	@Column(name = "provider_id")
+	private String providerId;
 
 	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
 	private DoctorProfile doctorProfile;
