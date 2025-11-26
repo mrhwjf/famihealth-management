@@ -1,4 +1,8 @@
-package com.famihealth.family_health_management.dto.response.permission;
+package com.famihealth.family_health_management.dto.response.role;
+
+// import java.util.Set;
+
+// import com.famihealth.family_health_management.dto.response.permission.PermissionDto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PermissionDto {
+public class RoleDto {
 	private Integer id;
 	private String name;
 	private String description;

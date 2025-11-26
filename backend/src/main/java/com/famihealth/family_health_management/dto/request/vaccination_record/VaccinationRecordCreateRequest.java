@@ -1,8 +1,10 @@
-package com.famihealth.family_health_management.dto.response.vaccination_record;
+package com.famihealth.family_health_management.dto.request.vaccination_record;
 
 import java.time.LocalDate;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,14 +14,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class VaccinationRecordDto {
-	private Integer id;
-	private Integer familyMemberId;
-	private String familyMemberName;
+public class VaccinationRecordCreateRequest {
+	@NotNull
 	private Integer vaccineId;
-	private String vaccineName;
+
+	@NotNull
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate administeredDate;
+
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
 	private LocalDate nextDueDate;
 }

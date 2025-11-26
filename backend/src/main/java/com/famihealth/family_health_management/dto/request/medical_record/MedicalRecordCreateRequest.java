@@ -9,11 +9,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import com.famihealth.family_health_management.dto.request.medical_document.MedicalDocumentCreateRequest;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MedicalRecordCreateRequest {
+
+	private Integer doctorId; // Optional: either the FAMILY or DOCTOR can create the record
 
 	@NotNull
 	private Integer familyMemberId;
@@ -30,4 +35,7 @@ public class MedicalRecordCreateRequest {
 	private String treatment;
 
 	private LocalDate followUpDate;
+
+	// Only for initial creation of record
+	private List<MedicalDocumentCreateRequest> documents;
 }

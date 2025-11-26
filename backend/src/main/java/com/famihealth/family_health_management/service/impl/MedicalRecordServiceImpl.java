@@ -1,5 +1,6 @@
 package com.famihealth.family_health_management.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -13,16 +14,13 @@ import com.famihealth.family_health_management.dto.request.medical_record.Medica
 import com.famihealth.family_health_management.dto.request.medical_record.MedicalRecordUpdateRequest;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
-import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.medical_document.MedicalDocumentDto;
-import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordDto;
-import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordDetailDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordSummaryDto;
 import com.famihealth.family_health_management.exception.ForbiddenException;
 import com.famihealth.family_health_management.exception.NotFoundException;
-import com.famihealth.family_health_management.mapper.FamilyMemberMapper;
 import com.famihealth.family_health_management.mapper.MedicalDocumentMapper;
 import com.famihealth.family_health_management.mapper.MedicalRecordMapper;
-import com.famihealth.family_health_management.mapper.UserMapper;
 import com.famihealth.family_health_management.model.Facility;
 import com.famihealth.family_health_management.model.FamilyMember;
 import com.famihealth.family_health_management.model.MedicalDocument;
@@ -57,42 +55,55 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 	private final SessionService sessionService;
 	private final MedicalRecordMapper medicalRecordMapper;
 	private final MedicalDocumentMapper medicalDocumentMapper;
-	private final FamilyMemberMapper familyMemberMapper;
-	private final UserMapper userMapper;
 
 	@Override
-	public MedicalRecordDto createRecord(String sessionId, MedicalRecordCreateRequest request) {
+	@Transactional
+	public MedicalRecordDetailDto createRecord(String sessionId, MedicalRecordCreateRequest request) {
 		SessionData session = requireSession(sessionId);
 		FamilyMember member = requireFamilyMember(request.getFamilyMemberId());
 
 		ensureCanCreateOrUpdate(session, member, true);
 
+		// Convert record fields
 		MedicalRecord record = medicalRecordMapper.toEntity(request);
 		record.setFamilyMember(member);
 		record.setFacility(resolveFacility(request.getFacilityId()));
 
+		// Creator doctor (if any)
 		if (isDoctor(session)) {
-			User doctor = requireUser(session.getUserId());
-			record.setDoctor(doctor);
+			record.setDoctor(requireUser(session.getUserId()));
 		} else {
 			record.setDoctor(null);
 		}
 
+		// Bulk document creation (safe because all docs are new)
+		if (request.getDocuments() != null && !request.getDocuments().isEmpty()) {
+			List<MedicalDocument> documents = request.getDocuments().stream()
+					.map(medicalDocumentMapper::toEntity)
+					.peek(doc -> doc.setMedicalRecord(record))
+					.toList();
+
+			record.setDocuments(documents);
+		} else {
+			record.setDocuments(new ArrayList<>());
+		}
+
 		MedicalRecord saved = medicalRecordRepository.save(record);
-		return toDtoWithRelations(saved);
+		return medicalRecordMapper.toDetailDto(saved);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public MedicalRecordDto getRecordById(String sessionId, Integer recordId) {
+	public MedicalRecordDetailDto getRecordById(String sessionId, Integer recordId) {
 		SessionData session = requireSession(sessionId);
 		MedicalRecord record = requireMedicalRecord(recordId);
 		ensureCanView(session, record);
-		return toDtoWithRelations(record);
+		return medicalRecordMapper.toDetailDto(record);
 	}
 
 	@Override
-	public MedicalRecordDto updateRecord(String sessionId, Integer recordId, MedicalRecordUpdateRequest request) {
+	public MedicalRecordDetailDto updateRecord(String sessionId, Integer recordId,
+			MedicalRecordUpdateRequest request) {
 		SessionData session = requireSession(sessionId);
 		MedicalRecord record = requireMedicalRecord(recordId);
 		ensureCanModify(session, record);
@@ -103,7 +114,7 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 		}
 
 		MedicalRecord saved = medicalRecordRepository.save(record);
-		return toDtoWithRelations(saved);
+		return medicalRecordMapper.toDetailDto(saved);
 	}
 
 	@Override
@@ -118,25 +129,14 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public PageResponse<MedicalRecordDto> getRecordsByFamilyMember(String sessionId, Integer familyMemberId,
+	public PageResponse<MedicalRecordSummaryDto> getRecordsByFamilyMember(String sessionId, Integer familyMemberId,
 			Pageable pageable) {
 		SessionData session = requireSession(sessionId);
 		FamilyMember member = requireFamilyMember(familyMemberId);
 		ensureCanView(session, member);
 
 		Page<MedicalRecord> recordsPage = medicalRecordRepository.findByFamilyMember_Id(familyMemberId, pageable);
-		return PageResponseMapper.fromPage(recordsPage, medicalRecordMapper::toDto);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<MedicalDocumentDto> getDocumentsByRecord(String sessionId, Integer recordId) {
-		SessionData session = requireSession(sessionId);
-		MedicalRecord record = requireMedicalRecord(recordId);
-		ensureCanView(session, record);
-		return medicalDocumentRepository.findByMedicalRecord_Id(recordId).stream()
-				.map(medicalDocumentMapper::toDto)
-				.toList();
+		return PageResponseMapper.fromPage(recordsPage, medicalRecordMapper::toSummaryDto);
 	}
 
 	@Override
@@ -171,19 +171,6 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 		MedicalRecord record = document.getMedicalRecord();
 		ensureCanModify(session, record);
 		medicalDocumentRepository.delete(document);
-	}
-
-	private MedicalRecordDto toDtoWithRelations(MedicalRecord record) {
-		MedicalRecordDto dto = medicalRecordMapper.toDto(record);
-		FamilyMemberSummaryDto memberDto = familyMemberMapper.toSummaryDto(record.getFamilyMember());
-		dto.setFamilyMember(memberDto);
-		User doctor = record.getDoctor();
-		UserSummaryDto doctorDto = doctor != null ? userMapper.toSummaryDto(doctor) : null;
-		dto.setDoctor(doctorDto);
-		dto.setMedicalDocuments(medicalDocumentRepository.findByMedicalRecord_Id(record.getId()).stream()
-				.map(medicalDocumentMapper::toDto)
-				.toList());
-		return dto;
 	}
 
 	private Facility resolveFacility(Integer facilityId) {

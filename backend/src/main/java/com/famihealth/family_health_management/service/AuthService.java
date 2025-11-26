@@ -1,11 +1,11 @@
 package com.famihealth.family_health_management.service;
 
 import com.famihealth.family_health_management.dto.request.auth.LoginRequest;
+import com.famihealth.family_health_management.dto.request.auth.PasswordResetConfirmRequest;
+import com.famihealth.family_health_management.dto.request.auth.PasswordResetRequest;
 import com.famihealth.family_health_management.dto.request.auth.RegisterRequest;
-import com.famihealth.family_health_management.dto.request.auth.ResetPasswordRequest;
 import com.famihealth.family_health_management.dto.request.user.doctor.DoctorCreateRequest;
 import com.famihealth.family_health_management.dto.response.auth.AuthResponse;
-import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
 
 public interface AuthService {
 
@@ -13,13 +13,13 @@ public interface AuthService {
 
 	void logout(String sessionId);
 
-	UserDetailDto registerAdmin(RegisterRequest req);
+	AuthResponse registerAdmin(RegisterRequest req);
 
-	UserDetailDto registerFamily(RegisterRequest req);
+	AuthResponse registerFamily(RegisterRequest req);
 
-	UserDetailDto registerDoctor(DoctorCreateRequest req);
+	AuthResponse registerDoctor(DoctorCreateRequest req);
 
-	String requestPasswordReset(String email);
+	void requestPasswordReset(PasswordResetRequest request);
 
-	void resetPassword(ResetPasswordRequest req);
+	void verifyOtpAndResetPassword(PasswordResetConfirmRequest request);
 }

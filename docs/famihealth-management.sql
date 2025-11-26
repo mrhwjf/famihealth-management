@@ -19,20 +19,8 @@ CREATE TABLE `users` (
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `locked` bool NOT NULL DEFAULT false,
 
-  `auth_provider` enum('GOOGLE','FACEBOOK') DEFAULT NULL,
+  `auth_provider` enum('GOOGLE') DEFAULT NULL,
   `provider_id` varchar(255) DEFAULT NULL
-);
-
-CREATE TABLE `permissions` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255) UNIQUE NOT NULL,
-  `description` text
-);
-
-CREATE TABLE `role_permissions` (
-  `role_id` int,
-  `permission_id` int,
-  Primary key(role_id,permission_id)
 );
 
 CREATE TABLE `doctor_profiles` (
@@ -60,7 +48,8 @@ CREATE TABLE `appointments` (
   `appointment_datetime` datetime,
   `location` varchar(255),
   `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
-  `notes` text
+  `notes` text,
+  `medical_notes` text
 );
 
 CREATE TABLE `families` (
@@ -191,15 +180,6 @@ CREATE TABLE `health_stats` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE `password_reset_tokens` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `user_id` int,
-  `token` varchar(255) UNIQUE NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `expires_at` datetime,
-  `used` boolean DEFAULT false
-);
-
 CREATE TABLE `family_invite_codes` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `family_id` int NOT NULL UNIQUE, -- ensures one active code per family
@@ -217,7 +197,7 @@ USE family_health_management;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =========================
--- 1. ROLES
+-- ROLES
 -- =========================
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'Quản trị viên hệ thống, có toàn quyền truy cập'),
@@ -225,41 +205,7 @@ INSERT INTO roles (name, description) VALUES
 ('FAMILY', 'Người tạo và quản lý tài khoản gia đình');
 
 -- =========================
--- 2. PERMISSIONS
--- =========================
-INSERT INTO permissions (name, description) VALUES
-('MANAGE_USERS', 'Tạo, chỉnh sửa hoặc khóa/mở khóa tài khoản người dùng'),
-('MANAGE_MASTER_DATA', 'Chỉnh sửa dữ liệu danh mục như vắc-xin, thuốc, cơ sở y tế, quan hệ, v.v.'),
-('ACCESS_FAMILY_RECORDS', 'Xem hồ sơ y tế của bệnh nhân/gia đình'),
-('MODIFY_FAMILY_RECORDS', 'Chỉnh sửa hồ sơ y tế của bệnh nhân/gia đình'),
-('VIEW_HEALTH_STATISTICS', 'Xem thống kê và dữ liệu sức khỏe');
-
-
--- =========================
--- 3. ROLE_PERMISSIONS
--- =========================
--- ADMIN có quyền quản lí người dùng và dữ liệu danh mục
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(1, 1),
-(1, 2);
-
--- DOCTOR: chỉ có quyền liên quan đến bệnh nhân
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(2, 3), -- ACCESS_FAMILY_RECORDS
-(2, 4), -- MODIFY_FAMILY_RECORDS
-(2, 5); -- VIEW_HEALTH_STATISTICS
-
-
--- FAMILY: Quyền tạo và quản lí hồ sơ gia đình
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(3, 3), -- ACCESS_FAMILY_RECORDS
-(3, 4); -- CREATE_APPOINTMENT
-
--- =========================
--- 4. VACCINES
+-- VACCINES
 -- =========================
 INSERT INTO vaccines (name) VALUES
 ('Viêm gan B'),
@@ -282,7 +228,7 @@ INSERT INTO vaccines (name) VALUES
 ('Dại');
 
 -- =========================
--- 5. DRUGS
+-- DRUGS
 -- =========================
 INSERT INTO drugs (name, description) VALUES
 ('Paracetamol', 'Thuốc hạ sốt, giảm đau thông thường'),
@@ -307,7 +253,7 @@ INSERT INTO drugs (name, description) VALUES
 ('Gabapentin', 'Thuốc điều trị động kinh và đau thần kinh');
 
 -- =========================
--- 6. RELATIONSHIPS_TO_CREATOR
+-- RELATIONSHIPS_TO_CREATOR
 -- =========================
 INSERT INTO relationships_to_creator (relationship_name, description) VALUES
 ('Khác', 'Mối quan hệ khác'),
@@ -327,7 +273,7 @@ INSERT INTO relationships_to_creator (relationship_name, description) VALUES
 ('Bà ngoại', 'Bà ngoại của người tạo');
 
 -- =========================
--- 7. FACILITIES
+-- FACILITIES
 -- =========================
 INSERT INTO facilities (name) VALUES
 ('Bệnh viện Chợ Rẫy'),
@@ -346,7 +292,7 @@ INSERT INTO facilities (name) VALUES
 ('Phòng khám Đa khoa Saigon Healthcare');
 
 -- =========================
--- 8. HEALTH_STATS_TYPES
+-- HEALTH_STATS_TYPES
 -- =========================
 INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal_range_max, description) VALUES
 ('Huyết áp tâm thu', 'mmHg', 90, 120, 'Chỉ số huyết áp tâm thu bình thường'),
@@ -359,7 +305,7 @@ INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal
 ('Cân nặng', 'kg', null, null, 'Cân nặng cơ thể con người');
 
 -- =========================
--- 9. USERS
+-- USERS
 -- =========================
 INSERT INTO users (role_id, password_hash, name, phone, email, profile_url, locked) VALUES
 (1, 'admin_hashed_password', 'Admin User', '0123456789', 'admin@example.com', 'http://example.com/profile/admin', false),
@@ -368,7 +314,7 @@ INSERT INTO users (role_id, password_hash, name, phone, email, profile_url, lock
 (3, 'member_hashed_password', 'Family Member User', '0223344556', 'member@example.com', 'http://example.com/profile/member', false);
 
 -- =========================
--- 10. DOCTOR_PROFILES
+-- DOCTOR_PROFILES
 -- =========================
 INSERT INTO doctor_profiles (doctor_id, license_number, certificate_file_url, verified) VALUES
 (2, 'DOC123456', 'http://example.com/certificates/doc_john_doe.pdf', true);
@@ -378,10 +324,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 
 ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT;
-
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
-
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE;
 
 ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
@@ -431,9 +373,9 @@ ALTER TABLE `health_stats` ADD FOREIGN KEY (`family_member_id`) REFERENCES `fami
 
 ALTER TABLE `health_stats` ADD FOREIGN KEY (`stats_type_id`) REFERENCES `health_stats_types` (`id`) ON DELETE RESTRICT;
 
-ALTER TABLE `password_reset_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
 ALTER TABLE `family_invite_codes` ADD FOREIGN KEY (`family_id`) REFERENCES `families` (`id`) ON DELETE CASCADE;
 
 ALTER TABLE `medical_records` ADD FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL;
+
+ALTER TABLE `medical_documents` ADD FOREIGN KEY (`medical_record_id`) REFERENCES `medical_records` (`id`) ON DELETE CASCADE;
 

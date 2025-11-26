@@ -14,12 +14,15 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AppointmentDto {
 	private Integer id;
-	private Integer issuerId;
+	private String issuer;
+	private String patient;
 	private Integer patientId;
+	private String doctor;
 	private Integer doctorId;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime appointmentDatetime;
 	private String location;
 	private String status;
 	private String notes;
+	private String medicalNotes;
 }

@@ -43,6 +43,6 @@ public class Family {
 	@Column(name = "phone")
 	private String phone;
 
-	@OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "family", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
 	private Set<FamilyMember> members = new HashSet<>();
 }

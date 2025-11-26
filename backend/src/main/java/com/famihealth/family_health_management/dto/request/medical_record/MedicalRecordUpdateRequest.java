@@ -14,6 +14,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MedicalRecordUpdateRequest {
 
+	// DoctorId is omitted to prevent changing the creator of the record
+
 	private Integer facilityId;
 
 	private LocalDate date;

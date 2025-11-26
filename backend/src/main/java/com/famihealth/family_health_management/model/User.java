@@ -75,7 +75,7 @@ public class User {
 	@Column(name = "provider_id")
 	private String providerId;
 
-	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private DoctorProfile doctorProfile;
 
 }

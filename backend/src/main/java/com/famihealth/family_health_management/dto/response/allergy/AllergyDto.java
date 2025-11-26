@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class AllergyDto {
 	private Integer id;
 	private Integer familyMemberId;
+	private String familyMemberName;
 	private String allergens;
 	private String notes;
 }

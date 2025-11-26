@@ -17,10 +17,10 @@ import lombok.NoArgsConstructor;
 public class SocialLoginRequest {
 	@NotNull
 	@Enumerated(EnumType.STRING)
-	private AuthProvider provider; // GOOGLE, FACEBOOK
+	private AuthProvider provider; // GOOGLE
 
 	@NotNull
-	private String token; // Google ID token or FB token
+	private String token; // Google ID token
 
 	@NotNull
 	private String role; // ADMIN, FAMILY, DOCTOR

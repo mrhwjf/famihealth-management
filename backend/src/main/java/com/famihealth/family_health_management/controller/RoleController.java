@@ -19,9 +19,7 @@ import com.famihealth.family_health_management.dto.request.role.RoleCreateReques
 import com.famihealth.family_health_management.dto.request.role.RoleUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
-import com.famihealth.family_health_management.dto.response.role.RoleDetailDto;
-import com.famihealth.family_health_management.dto.response.role.RoleFormDto;
-import com.famihealth.family_health_management.dto.response.role.RoleSummaryDto;
+import com.famihealth.family_health_management.dto.response.role.RoleDto;
 import com.famihealth.family_health_management.service.RoleService;
 
 import jakarta.validation.Valid;
@@ -36,15 +34,15 @@ public class RoleController {
 	private final RoleService roleService;
 
 	@PostMapping
-	public ResponseEntity<ApiResponse<RoleDetailDto>> create(@Valid @RequestBody RoleCreateRequest req) {
-		RoleDetailDto dto = roleService.create(req);
+	public ResponseEntity<ApiResponse<RoleDto>> create(@Valid @RequestBody RoleCreateRequest req) {
+		RoleDto dto = roleService.create(req);
 		return ResponseEntity.ok(ApiResponse.success("Role created", dto));
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<ApiResponse<RoleDetailDto>> updateById(@PathVariable Integer id,
+	public ResponseEntity<ApiResponse<RoleDto>> updateById(@PathVariable Integer id,
 			@Valid @RequestBody RoleUpdateRequest req) {
-		RoleDetailDto dto = roleService.updateById(id, req);
+		RoleDto dto = roleService.updateById(id, req);
 		return ResponseEntity.ok(ApiResponse.success("Role updated", dto));
 	}
 
@@ -55,28 +53,16 @@ public class RoleController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<ApiResponse<RoleDetailDto>> getById(@PathVariable Integer id) {
+	public ResponseEntity<ApiResponse<RoleDto>> getById(@PathVariable Integer id) {
 		return ResponseEntity.ok(ApiResponse.success("OK", roleService.getById(id)));
 	}
 
 	@GetMapping
-	public ResponseEntity<ApiResponse<PageResponse<RoleSummaryDto>>> getAll(
+	public ResponseEntity<ApiResponse<PageResponse<RoleDto>>> getAll(
 			@RequestParam(name = "name", required = false) String name,
 			@ParameterObject @PageableDefault(size = 10, sort = "id") Pageable pageable) {
 
-		PageResponse<RoleSummaryDto> data = roleService.getAll(name, pageable);
+		PageResponse<RoleDto> data = roleService.getAll(name, pageable);
 		return ResponseEntity.ok(ApiResponse.success("OK", data));
-	}
-
-	@GetMapping("/form-data")
-	public ResponseEntity<ApiResponse<RoleFormDto>> getCreateFormData() {
-		RoleFormDto dto = roleService.getCreateFormData();
-		return ResponseEntity.ok(ApiResponse.success("OK", dto));
-	}
-
-	@GetMapping("/{id}/form-data")
-	public ResponseEntity<ApiResponse<RoleFormDto>> getEditFormData(@PathVariable Integer id) {
-		RoleFormDto dto = roleService.getEditFormData(id);
-		return ResponseEntity.ok(ApiResponse.success("OK", dto));
 	}
 }

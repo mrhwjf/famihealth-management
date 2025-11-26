@@ -25,7 +25,7 @@ public class DoctorProfile {
 	@Id
 	private Integer doctorId;
 
-	@Column(name = "license_number", nullable = false)
+	@Column(name = "license_number")
 	private String licenseNumber;
 
 	@Column(name = "certificate_file_url")

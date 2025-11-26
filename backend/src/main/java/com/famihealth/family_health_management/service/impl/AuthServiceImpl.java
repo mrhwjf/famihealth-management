@@ -1,34 +1,36 @@
 package com.famihealth.family_health_management.service.impl;
 
-import java.time.LocalDateTime;
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Optional;
-import java.util.UUID;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.famihealth.family_health_management.dto.request.auth.LoginRequest;
 import com.famihealth.family_health_management.dto.request.auth.RegisterRequest;
-import com.famihealth.family_health_management.dto.request.auth.ResetPasswordRequest;
+import com.famihealth.family_health_management.dto.request.auth.PasswordResetConfirmRequest;
+import com.famihealth.family_health_management.dto.request.auth.PasswordResetRequest;
 import com.famihealth.family_health_management.dto.request.doctor_profile.DoctorProfileCreateRequest;
 import com.famihealth.family_health_management.dto.request.user.UserCreateRequest;
 import com.famihealth.family_health_management.dto.request.user.doctor.DoctorCreateRequest;
 import com.famihealth.family_health_management.dto.response.auth.AuthResponse;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
-import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
+import com.famihealth.family_health_management.exception.BadRequestException;
 import com.famihealth.family_health_management.exception.ForbiddenException;
 import com.famihealth.family_health_management.exception.ResourceNotFoundException;
 import com.famihealth.family_health_management.mapper.DoctorProfileMapper;
 import com.famihealth.family_health_management.mapper.UserMapper;
 import com.famihealth.family_health_management.model.DoctorProfile;
-import com.famihealth.family_health_management.model.PasswordResetToken;
 import com.famihealth.family_health_management.model.Role;
 import com.famihealth.family_health_management.model.User;
-import com.famihealth.family_health_management.repository.PasswordResetTokenRepository;
 import com.famihealth.family_health_management.repository.RoleRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.AuthService;
+import com.famihealth.family_health_management.service.EmailService;
 import com.famihealth.family_health_management.service.SessionService;
 
 import lombok.RequiredArgsConstructor;
@@ -41,15 +43,23 @@ public class AuthServiceImpl implements AuthService {
 	private static final String ROLE_ADMIN = "ADMIN";
 	private static final String ROLE_FAMILY = "FAMILY";
 	private static final String ROLE_DOCTOR = "DOCTOR";
-	private static final long PASSWORD_RESET_TOKEN_MINUTES = 30L;
+	private static final String OTP_KEY_PREFIX = "otp:forgot-password:";
+	private static final Duration OTP_TTL = Duration.ofMinutes(5);
+	private static final int OTP_LENGTH = 6;
+	private static final int MAX_OTP_ATTEMPTS = 5;
+	private static final String PASSWORD_RESET_SUBJECT = "Password Reset Request";
+	private static final String APP_NAME = "Famihealth";
 
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
-	private final PasswordResetTokenRepository passwordResetTokenRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final SessionService sessionService;
 	private final UserMapper userMapper;
 	private final DoctorProfileMapper doctorProfileMapper;
+	private final RedisTemplate<String, Object> redisTemplate;
+	private final ObjectMapper objectMapper;
+	private final EmailService emailService;
+	private final SecureRandom secureRandom = new SecureRandom();
 
 	@Override
 	@Transactional(readOnly = true)
@@ -74,11 +84,7 @@ public class AuthServiceImpl implements AuthService {
 
 		String roleName = user.getRole() != null ? user.getRole().getName() : null;
 		SessionData sessionData = sessionService.createSession(user.getId(), roleName);
-		return AuthResponse.builder()
-				.sessionId(sessionData.getSessionId())
-				.session(sessionData)
-				.user(userMapper.toDetailDto(user))
-				.build();
+		return buildAuthResponse(user, sessionData);
 	}
 
 	@Override
@@ -87,19 +93,21 @@ public class AuthServiceImpl implements AuthService {
 	}
 
 	@Override
-	public UserDetailDto registerAdmin(RegisterRequest req) {
+	public AuthResponse registerAdmin(RegisterRequest req) {
 		User user = buildUserFromRequest(req, ROLE_ADMIN);
-		return userMapper.toDetailDto(userRepository.save(user));
+		User saved = userRepository.save(user);
+		return buildAuthResponse(saved);
 	}
 
 	@Override
-	public UserDetailDto registerFamily(RegisterRequest req) {
+	public AuthResponse registerFamily(RegisterRequest req) {
 		User user = buildUserFromRequest(req, ROLE_FAMILY);
-		return userMapper.toDetailDto(userRepository.save(user));
+		User saved = userRepository.save(user);
+		return buildAuthResponse(saved);
 	}
 
 	@Override
-	public UserDetailDto registerDoctor(DoctorCreateRequest req) {
+	public AuthResponse registerDoctor(DoctorCreateRequest req) {
 		UserCreateRequest userReq = req.getUser();
 		if (userReq == null) {
 			throw new IllegalArgumentException("User information is required");
@@ -127,58 +135,59 @@ public class AuthServiceImpl implements AuthService {
 			user.setDoctorProfile(profile);
 		}
 
-		return userMapper.toDetailDto(userRepository.save(user));
+		User saved = userRepository.save(user);
+		return buildAuthResponse(saved);
 	}
 
 	@Override
-	public String requestPasswordReset(String email) {
-		if (email == null || email.isBlank()) {
+	public void requestPasswordReset(PasswordResetRequest request) {
+		String normalizedEmail = normalizeEmail(request.getEmail());
+		if (normalizedEmail == null) {
 			throw new IllegalArgumentException("Email is required");
 		}
-		Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email.trim());
-		if (userOpt.isEmpty()) {
-			return null; // silently succeed to prevent user enumeration
-		}
 
-		User user = userOpt.get();
-		String tokenValue = UUID.randomUUID().toString();
+		User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+				.orElseThrow(() -> new ResourceNotFoundException("User with the provided email was not found"));
 
-		PasswordResetToken token = new PasswordResetToken();
-		token.setUser(user);
-		token.setToken(tokenValue);
-		token.setExpiresAt(LocalDateTime.now().plusMinutes(PASSWORD_RESET_TOKEN_MINUTES));
-		token.setUsed(Boolean.FALSE);
-		passwordResetTokenRepository.save(token);
-		return tokenValue;
+		String otp = generateOtp();
+		storeOtp(normalizedEmail, otp);
+		String recipientEmail = user.getEmail() == null ? normalizedEmail : user.getEmail();
+		emailService.sendEmail(recipientEmail, PASSWORD_RESET_SUBJECT,
+				buildOtpEmailBody(user.getName(), otp));
 	}
 
 	@Override
-	public void resetPassword(ResetPasswordRequest req) {
-		if (!req.getNewPassword().equals(req.getConfirmPassword())) {
-			throw new IllegalArgumentException("Passwords do not match");
+	public void verifyOtpAndResetPassword(PasswordResetConfirmRequest request) {
+		String normalizedEmail = normalizeEmail(request.getEmail());
+		if (normalizedEmail == null) {
+			throw new IllegalArgumentException("Email is required");
 		}
 
-		PasswordResetToken token = passwordResetTokenRepository.findByToken(req.getToken())
-				.orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+		User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+				.orElseThrow(() -> new ResourceNotFoundException("User with the provided email was not found"));
 
-		if (Boolean.TRUE.equals(token.getUsed())) {
-			throw new IllegalArgumentException("Token has already been used");
+		String key = buildOtpKey(normalizedEmail);
+		Object stored = redisTemplate.opsForValue().get(key);
+		OtpPayload payload = mapToOtpPayload(stored);
+		if (payload == null) {
+			throw new BadRequestException("OTP is invalid or has expired");
 		}
 
-		if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(LocalDateTime.now())) {
-			throw new IllegalArgumentException("Token has expired");
+		if (payload.getAttempts() >= MAX_OTP_ATTEMPTS) {
+			redisTemplate.delete(key);
+			throw new BadRequestException("Maximum OTP attempts exceeded. Please request a new code.");
 		}
 
-		User user = token.getUser();
-		if (user == null) {
-			throw new IllegalStateException("Token is not linked to any user");
+		if (!payload.getCode().equals(request.getOtp())) {
+			OtpPayload updated = new OtpPayload(payload.getCode(), payload.getAttempts() + 1);
+			Duration remainingTtl = resolveRemainingTtl(key);
+			redisTemplate.opsForValue().set(key, updated, remainingTtl);
+			throw new BadRequestException("OTP is invalid or has expired");
 		}
 
-		user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+		user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
 		userRepository.save(user);
-
-		token.setUsed(Boolean.TRUE);
-		passwordResetTokenRepository.save(token);
+		redisTemplate.delete(key);
 	}
 
 	private User buildUserFromRequest(RegisterRequest req, String roleName) {
@@ -209,6 +218,115 @@ public class AuthServiceImpl implements AuthService {
 			if (!normalizedPhone.isEmpty() && userRepository.existsByPhone(normalizedPhone)) {
 				throw new IllegalArgumentException("Phone number is already in use");
 			}
+		}
+	}
+
+	private AuthResponse buildAuthResponse(User user) {
+		String roleName = user.getRole() != null ? user.getRole().getName() : null;
+		SessionData sessionData = sessionService.createSession(user.getId(), roleName);
+		return buildAuthResponse(user, sessionData);
+	}
+
+	private AuthResponse buildAuthResponse(User user, SessionData sessionData) {
+		return AuthResponse.builder()
+				.sessionId(sessionData.getSessionId())
+				.session(sessionData)
+				.user(userMapper.toDetailDto(user))
+				.build();
+	}
+
+	private String normalizeEmail(String email) {
+		if (email == null) {
+			return null;
+		}
+		String trimmed = email.trim();
+		return trimmed.isEmpty() ? null : trimmed.toLowerCase();
+	}
+
+	private String buildOtpKey(String email) {
+		return OTP_KEY_PREFIX + email;
+	}
+
+	private String generateOtp() {
+		int bound = (int) Math.pow(10, OTP_LENGTH);
+		int value = secureRandom.nextInt(bound);
+		return String.format("%0" + OTP_LENGTH + "d", value);
+	}
+
+	private void storeOtp(String email, String otp) {
+		redisTemplate.opsForValue().set(buildOtpKey(email), new OtpPayload(otp, 0), OTP_TTL);
+	}
+
+	private OtpPayload mapToOtpPayload(Object stored) {
+		if (stored == null) {
+			return null;
+		}
+		if (stored instanceof OtpPayload payload) {
+			return payload;
+		}
+		try {
+			return objectMapper.convertValue(stored, OtpPayload.class);
+		} catch (IllegalArgumentException ex) {
+			return null;
+		}
+	}
+
+	private Duration resolveRemainingTtl(String key) {
+		Long ttlSeconds = redisTemplate.getExpire(key);
+		if (ttlSeconds == null || ttlSeconds <= 0) {
+			return OTP_TTL;
+		}
+		return Duration.ofSeconds(ttlSeconds);
+	}
+
+	private String buildOtpEmailBody(String userName, String otp) {
+		String recipientName = (userName == null || userName.isBlank()) ? "User" : userName;
+		return String.format(
+				"""
+						Dear %s,
+
+						You requested a password reset. Please use the OTP below to reset your password. This OTP is valid for 5 minutes.
+
+						OTP: %s
+
+						If you did not request this, please ignore this email.
+
+						Best regards,
+						%s Team
+						""",
+				recipientName,
+				otp,
+				APP_NAME);
+	}
+
+	private static final class OtpPayload {
+		private String code;
+		private int attempts;
+
+		private OtpPayload() {
+		}
+
+		private OtpPayload(String code, int attempts) {
+			this.code = code;
+			this.attempts = attempts;
+		}
+
+		public String getCode() {
+			return code;
+		}
+
+		@SuppressWarnings("unused")
+		public void setCode(String code) {
+			this.code = code;
+		}
+
+		public int getAttempts() {
+			return attempts;
+		}
+
+		@SuppressWarnings("unused")
+		public void setAttempts(int attempts) {
+			this.attempts = attempts;
 		}
 	}
 }

@@ -56,4 +56,7 @@ public class Appointment {
 	@Column(name = "notes")
 	private String notes;
 
+	@Column(name = "medical_notes")
+	private String medicalNotes;
+
 }
