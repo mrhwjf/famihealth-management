@@ -1,27 +1,28 @@
 package com.famihealth.family_health_management.controller;
 
-import java.util.List;
-
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentCreateRequest;
-import com.famihealth.family_health_management.dto.request.appointment.AppointmentMedicalNotesUpdateRequest;
+import com.famihealth.family_health_management.dto.request.appointment.AppointmentFilterRequest;
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.appointment.AppointmentDto;
+import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.service.AppointmentService;
 
 import jakarta.validation.Valid;
@@ -55,10 +56,11 @@ public class AppointmentController {
 	}
 
 	@GetMapping("/appointments")
-	public ResponseEntity<ApiResponse<List<AppointmentDto>>> getAppointmentsByPatient(
+	public ResponseEntity<ApiResponse<PageResponse<AppointmentDto>>> getAppointments(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
-			@RequestParam(name = "patientId") Integer patientId) {
-		List<AppointmentDto> appointments = appointmentService.getAppointmentsByPatient(sessionId, patientId);
+			@Valid @ModelAttribute @ParameterObject AppointmentFilterRequest filter,
+			@PageableDefault(size = 20, page = 0) Pageable pageable) {
+		PageResponse<AppointmentDto> appointments = appointmentService.getAppointments(sessionId, filter, pageable);
 		return ResponseEntity.ok(ApiResponse.success("OK", appointments));
 	}
 
@@ -85,14 +87,5 @@ public class AppointmentController {
 			@PathVariable Integer appointmentId) {
 		AppointmentDto appointment = appointmentService.markAppointmentCompleted(sessionId, appointmentId);
 		return ResponseEntity.ok(ApiResponse.success("Appointment completed", appointment));
-	}
-
-	@PatchMapping("/appointments/{appointmentId}/medical-notes")
-	public ResponseEntity<ApiResponse<AppointmentDto>> updateMedicalNotes(
-			@RequestHeader(name = SESSION_HEADER) String sessionId,
-			@PathVariable Integer appointmentId,
-			@Valid @RequestBody AppointmentMedicalNotesUpdateRequest request) {
-		AppointmentDto appointment = appointmentService.updateMedicalNotes(sessionId, appointmentId, request);
-		return ResponseEntity.ok(ApiResponse.success("Medical notes updated", appointment));
 	}
 }

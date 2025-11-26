@@ -22,7 +22,7 @@ public class UserSpecs {
 
 			// Keyword search
 			if (filter.getField() != null && filter.getKeyword() != null) {
-				String pattern = "%" + filter.getKeyword().toLowerCase() + "%";
+				String pattern = "%" + filter.getKeyword().trim().toLowerCase() + "%";
 				switch (filter.getField()) {
 					case "name":
 						predicates.add(cb.like(cb.lower(root.get(User_.name)), pattern));

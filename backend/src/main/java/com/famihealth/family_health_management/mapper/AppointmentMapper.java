@@ -27,7 +27,6 @@ public interface AppointmentMapper {
 	@Mapping(target = "patient", ignore = true)
 	@Mapping(target = "doctor", ignore = true)
 	@Mapping(target = "status", ignore = true)
-	@Mapping(target = "medicalNotes", ignore = true)
 	void updateEntityFromDto(AppointmentUpdateRequest request, @MappingTarget Appointment entity);
 
 	@Mapping(target = "issuer", source = "issuer.name")

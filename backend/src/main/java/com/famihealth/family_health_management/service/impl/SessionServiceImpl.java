@@ -84,10 +84,6 @@ public class SessionServiceImpl implements SessionService {
 	}
 
 	private String generateSessionId() {
-		String id;
-		do {
-			id = java.util.UUID.randomUUID().toString();
-		} while (isValid(id));
-		return id;
+		return java.util.UUID.randomUUID().toString();
 	}
 }

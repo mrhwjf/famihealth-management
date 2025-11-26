@@ -48,8 +48,7 @@ CREATE TABLE `appointments` (
   `appointment_datetime` datetime,
   `location` varchar(255),
   `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
-  `notes` text,
-  `medical_notes` text
+  `notes` text
 );
 
 CREATE TABLE `families` (

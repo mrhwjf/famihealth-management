@@ -1,15 +1,20 @@
 package com.famihealth.family_health_management.service.impl;
 
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentCreateRequest;
-import com.famihealth.family_health_management.dto.request.appointment.AppointmentMedicalNotesUpdateRequest;
+import com.famihealth.family_health_management.dto.request.appointment.AppointmentFilterRequest;
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentUpdateRequest;
 import com.famihealth.family_health_management.dto.response.appointment.AppointmentDto;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
+import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.enums.AppointmentStatus;
 import com.famihealth.family_health_management.exception.BadRequestException;
 import com.famihealth.family_health_management.exception.ForbiddenException;
@@ -17,6 +22,7 @@ import com.famihealth.family_health_management.exception.NotFoundException;
 import com.famihealth.family_health_management.mapper.AppointmentMapper;
 import com.famihealth.family_health_management.model.Appointment;
 import com.famihealth.family_health_management.model.Family;
+import com.famihealth.family_health_management.model.FamilyAccess;
 import com.famihealth.family_health_management.model.FamilyMember;
 import com.famihealth.family_health_management.model.User;
 import com.famihealth.family_health_management.repository.AppointmentRepository;
@@ -26,6 +32,8 @@ import com.famihealth.family_health_management.repository.MemberAccessRepository
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.AppointmentService;
 import com.famihealth.family_health_management.service.SessionService;
+import com.famihealth.family_health_management.specs.AppointmentSpecs;
+import com.famihealth.family_health_management.utils.PageResponseMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,9 +65,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 		if (isFamily(session)) {
 			ensureFamilyAccess(session, patient);
 			ensureDoctorLinkedToMember(doctor.getId(), patient.getId());
-			if (request.getMedicalNotes() != null && !request.getMedicalNotes().isBlank()) {
-				throw new ForbiddenException("Family accounts cannot add medical notes");
-			}
 			if (request.getStatus() == AppointmentStatus.COMPLETED) {
 				throw new ForbiddenException("Family accounts cannot mark appointments as completed");
 			}
@@ -79,12 +84,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 		appointment.setIssuer(requireUser(session.getUserId()));
 		appointment.setStatus(resolveInitialStatus(request));
 
-		if (!isDoctor(session)) {
-			appointment.setMedicalNotes(null);
-		} else {
-			appointment.setMedicalNotes(request.getMedicalNotes());
-		}
-
 		Appointment saved = appointmentRepository.save(appointment);
 		return appointmentMapper.toDto(saved);
 	}
@@ -98,24 +97,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 		Appointment appointment = requireAppointment(appointmentId);
 		ensureCanView(session, appointment);
 		return appointmentMapper.toDto(appointment);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
-	public List<AppointmentDto> getAppointmentsByPatient(String sessionId, Integer patientId) {
-		if (patientId == null) {
-			throw new BadRequestException("patientId is required");
-		}
-
-		SessionData session = requireSession(sessionId);
-		ensureSupportedRole(session);
-
-		FamilyMember patient = requireFamilyMember(patientId);
-		ensureCanAccessPatient(session, patient);
-
-		return appointmentRepository.findByPatient_Id(patientId).stream()
-				.map(appointmentMapper::toDto)
-				.toList();
 	}
 
 	@Override
@@ -178,20 +159,26 @@ public class AppointmentServiceImpl implements AppointmentService {
 	}
 
 	@Override
-	public AppointmentDto updateMedicalNotes(String sessionId, Integer appointmentId,
-			AppointmentMedicalNotesUpdateRequest request) {
+	@Transactional(readOnly = true)
+	public PageResponse<AppointmentDto> getAppointments(String sessionId, AppointmentFilterRequest req,
+			Pageable pageable) {
 		SessionData session = requireSession(sessionId);
-		ensureDoctorRole(session);
+		ensureSupportedRole(session);
 
-		Appointment appointment = requireAppointment(appointmentId);
-		FamilyMember patient = requirePatient(appointment);
+		Set<Integer> accessibleIds = null;
+		if (isFamilyCreator(session)) {
+			accessibleIds = familyMemberRepository.findIdByFamily_Id(session.getUserId());
+		} else if (isFamily(session)) {
+			accessibleIds = Set.of(session.getUserId());
+		} else if (isDoctor(session)) {
+			accessibleIds = appointmentRepository.findPatientIdsByDoctorId(session.getUserId());
+		}
 
-		ensureDoctorAccess(session, patient);
-		ensureDoctorOwnsAppointment(session, appointment);
+		Specification<Appointment> spec = AppointmentSpecs.byFilter(req, accessibleIds);
+		Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
 
-		appointment.setMedicalNotes(request.getMedicalNotes());
-		Appointment saved = appointmentRepository.save(appointment);
-		return appointmentMapper.toDto(saved);
+		return PageResponseMapper.fromPage(page, appointmentMapper::toDto);
+
 	}
 
 	private void applyFamilyUpdate(Appointment appointment, AppointmentUpdateRequest request) {
@@ -236,14 +223,6 @@ public class AppointmentServiceImpl implements AppointmentService {
 			return AppointmentStatus.SCHEDULED;
 		}
 		return requested;
-	}
-
-	private void ensureCanAccessPatient(SessionData session, FamilyMember patient) {
-		if (isFamily(session)) {
-			ensureFamilyAccess(session, patient);
-		} else {
-			ensureDoctorAccess(session, patient);
-		}
 	}
 
 	private void ensureCanView(SessionData session, Appointment appointment) {
@@ -306,6 +285,21 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 	private boolean isFamily(SessionData session) {
 		return ROLE_FAMILY.equalsIgnoreCase(session.getRole());
+	}
+
+	private boolean isFamilyCreator(SessionData session) {
+		if (!isFamily(session)) {
+			return false;
+		}
+		List<FamilyAccess> accesses = familyAccessRepository.findByUserId(session.getUserId());
+		if (accesses == null || accesses.isEmpty()) {
+			throw new ForbiddenException("Family access record not found");
+		}
+		FamilyAccess access = accesses.get(0);
+		if (access.getFamily() == null || access.getFamily().getCreator() == null) {
+			throw new ForbiddenException("Family or creator information is missing");
+		}
+		return access.getFamily().getCreator().getId().equals(session.getUserId());
 	}
 
 	private boolean isDoctor(SessionData session) {

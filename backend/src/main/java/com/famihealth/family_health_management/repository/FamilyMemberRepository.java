@@ -1,6 +1,7 @@
 package com.famihealth.family_health_management.repository;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,4 +13,6 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Inte
 	List<FamilyMember> findByUser_Id(Integer userId);
 
 	List<FamilyMember> findByNameContainingIgnoreCase(String name);
+
+	Set<Integer> findIdByFamily_Id(Integer familyId);
 }

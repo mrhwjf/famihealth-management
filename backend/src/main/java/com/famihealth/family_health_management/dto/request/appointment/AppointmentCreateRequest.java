@@ -38,8 +38,5 @@ public class AppointmentCreateRequest {
 	@Size(max = 4000)
 	private String notes;
 
-	@Size(max = 4000)
-	private String medicalNotes;
-
 	private AppointmentStatus status;
 }

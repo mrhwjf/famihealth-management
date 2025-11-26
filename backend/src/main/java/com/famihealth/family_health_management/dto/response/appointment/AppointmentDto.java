@@ -24,5 +24,4 @@ public class AppointmentDto {
 	private String location;
 	private String status;
 	private String notes;
-	private String medicalNotes;
 }
