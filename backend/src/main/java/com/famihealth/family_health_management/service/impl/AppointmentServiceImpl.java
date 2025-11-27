@@ -1,5 +1,6 @@
 package com.famihealth.family_health_management.service.impl;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -13,7 +14,9 @@ import com.famihealth.family_health_management.dto.request.appointment.Appointme
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentFilterRequest;
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentUpdateRequest;
 import com.famihealth.family_health_management.dto.response.appointment.AppointmentDto;
+import com.famihealth.family_health_management.dto.response.appointment.AppointmentFormDto;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
+import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.enums.AppointmentStatus;
 import com.famihealth.family_health_management.exception.BadRequestException;
@@ -178,6 +181,129 @@ public class AppointmentServiceImpl implements AppointmentService {
 		Page<Appointment> page = appointmentRepository.findAll(spec, pageable);
 
 		return PageResponseMapper.fromPage(page, appointmentMapper::toDto);
+
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public AppointmentFormDto getAppointmentCreateFormData(String sessionId) {
+		return getAppointmentFormData(sessionId);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public AppointmentFormDto getAppointmentEditFormData(String sessionId, Integer appointmentId) {
+		SessionData session = requireSession(sessionId);
+		ensureSupportedRole(session);
+
+		Appointment appointment = requireAppointment(appointmentId);
+		ensureCanView(session, appointment);
+
+		AppointmentFormDto formData = getAppointmentFormData(sessionId);
+		formData.setAppointment(appointmentMapper.toDto(appointment));
+		return formData;
+	}
+
+	@Transactional(readOnly = true)
+	private AppointmentFormDto getAppointmentFormData(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		ensureSupportedRole(session);
+
+		List<FamilyMember> familyMembers = List.of();
+		List<User> doctors = List.of();
+
+		if (isFamily(session)) {
+			// Family: get all family members for this user
+			familyMembers = familyMemberRepository.findByFamily_Id(session.getUserId());
+
+			// Doctors linked to this family
+			doctors = userRepository.findDistinctByFamilyAccesses_FamilyIdAndRole_Name(session.getUserId(),
+					ROLE_DOCTOR);
+		} else if (isDoctor(session)) {
+			// Doctor: get all patients linked to this doctor
+			familyMembers = familyMemberRepository.findDistinctByMemberAccesses_DoctorId(session.getUserId());
+		}
+
+		Set<AppointmentStatus> statuses = EnumSet.allOf(AppointmentStatus.class);
+
+		return appointmentMapper.toFormDto(familyMembers, doctors, statuses, null);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public FilterOptionDto getAppointmentFilterOptions(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		ensureSupportedRole(session);
+
+		List<FamilyMember> familyMembers = List.of();
+		List<User> doctors = List.of();
+
+		if (isFamily(session)) {
+			// Family: get all family members for this user
+			familyMembers = familyMemberRepository.findByFamily_Id(session.getUserId());
+
+			// Doctors linked to this family
+			doctors = userRepository.findDistinctByFamilyAccesses_FamilyIdAndRole_Name(session.getUserId(),
+					ROLE_DOCTOR);
+		} else if (isDoctor(session)) {
+			// Doctor: get all patients linked to this doctor
+			familyMembers = familyMemberRepository.findDistinctByMemberAccesses_DoctorId(session.getUserId());
+		}
+
+		Set<AppointmentStatus> statuses = EnumSet.allOf(AppointmentStatus.class);
+
+		// 1. Dropdowns: patient (id name pair)
+		List<FilterOptionDto.DropdownOption> patientOptions = familyMembers.stream()
+				.map(member -> new FilterOptionDto.DropdownOption(
+						member.getId(), // value
+						member.getName(), // label
+						null // optional description
+				))
+				.toList();
+		FilterOptionDto.DropdownFilterOption patientDropdown = new FilterOptionDto.DropdownFilterOption(
+				"patientId", // field name
+				"Patient", // label
+				patientOptions,
+				false // multiSelect
+		);
+
+		// 2. Dropdowns: doctor (id name pair)
+		List<FilterOptionDto.DropdownOption> doctorOptions = doctors.stream()
+				.map(doctor -> new FilterOptionDto.DropdownOption(
+						doctor.getId(), // value
+						doctor.getName(), // label
+						null // optional description
+				))
+				.toList();
+		FilterOptionDto.DropdownFilterOption doctorDropdown = new FilterOptionDto.DropdownFilterOption(
+				"doctorId", // field name
+				"Doctor", // label
+				doctorOptions,
+				false // multiSelect
+		);
+
+		// 3. Dropdowns: status
+		List<FilterOptionDto.DropdownOption> statusOptions = statuses.stream()
+				.map(status -> new FilterOptionDto.DropdownOption(
+						status.name(), // value
+						status.name(), // label
+						null // optional description
+				))
+				.toList();
+		FilterOptionDto.DropdownFilterOption statusDropdown = new FilterOptionDto.DropdownFilterOption(
+				"status", // field name
+				"Status", // label
+				statusOptions,
+				false // multiSelect
+		);
+
+		// 4. Compose the final FilterOptionDto
+		return new FilterOptionDto(
+				List.of(patientDropdown, doctorDropdown, statusDropdown) // dropdowns
+				, List.of() // booleans
+				, List.of() // dateRanges
+				, List.of() // searchableFields
+		);
 
 	}
 

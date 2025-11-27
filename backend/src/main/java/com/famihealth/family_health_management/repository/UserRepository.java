@@ -1,5 +1,6 @@
 package com.famihealth.family_health_management.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,5 +18,8 @@ public interface UserRepository extends JpaRepository<User, Integer>, JpaSpecifi
 	boolean existsByEmailIgnoreCase(String email);
 
 	boolean existsByPhone(String phone);
+
+	// Fetch all doctors linked to a specific family (uses role name "DOCTOR")
+	List<User> findDistinctByFamilyAccesses_FamilyIdAndRole_Name(Integer familyId, String roleName);
 
 }

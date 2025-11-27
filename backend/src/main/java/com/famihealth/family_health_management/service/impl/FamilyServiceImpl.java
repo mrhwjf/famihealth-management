@@ -16,12 +16,14 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
+import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
 import com.famihealth.family_health_management.exception.BadRequestException;
 import com.famihealth.family_health_management.exception.ForbiddenException;
 import com.famihealth.family_health_management.exception.NotFoundException;
 import com.famihealth.family_health_management.mapper.FamilyMapper;
 import com.famihealth.family_health_management.mapper.FamilyMemberMapper;
+import com.famihealth.family_health_management.mapper.MemberAccessMapper;
 import com.famihealth.family_health_management.model.Family;
 import com.famihealth.family_health_management.model.FamilyAccess;
 import com.famihealth.family_health_management.model.FamilyMember;
@@ -60,6 +62,7 @@ public class FamilyServiceImpl implements FamilyService {
 	private final SessionService sessionService;
 	private final FamilyMapper familyMapper;
 	private final FamilyMemberMapper familyMemberMapper;
+	private final MemberAccessMapper memberAccessMapper;
 
 	@Override
 	public FamilyDto create(String sessionId, FamilyCreateRequest req) {
@@ -399,5 +402,23 @@ public class FamilyServiceImpl implements FamilyService {
 			throw new BadRequestException("Family member does not belong to the provided family");
 		}
 		return familyMemberMapper.toSummaryDto(member);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<MemberAccessDto> getMembersAccessList(String sessionId, Integer familyId) {
+		SessionData session = requireSession(sessionId);
+		Family family = requireFamily(familyId);
+		ensureHasAccess(session.getUserId(), family.getId());
+
+		List<FamilyMember> members = familyMemberRepository.findByFamily_Id(familyId);
+		List<MemberAccessDto> accessDtos = members.stream()
+				.flatMap(member -> {
+					List<MemberAccess> accesses = memberAccessRepository.findByMemberId(member.getId());
+					return accesses.stream()
+							.map(access -> memberAccessMapper.toDto(member, access.getDoctor()));
+				})
+				.toList();
+		return accessDtos;
 	}
 }

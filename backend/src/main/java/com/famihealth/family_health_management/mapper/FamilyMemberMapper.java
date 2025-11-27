@@ -30,5 +30,4 @@ public interface FamilyMemberMapper {
 	@Mapping(target = "family", ignore = true)
 	@Mapping(target = "user", ignore = true)
 	FamilyMember toEntity(FamilyMemberCreateRequest req);
-
 }

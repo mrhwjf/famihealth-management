@@ -9,14 +9,17 @@ import org.springframework.transaction.annotation.Transactional;
 import com.famihealth.family_health_management.dto.request.vaccination_record.VaccinationRecordCreateRequest;
 import com.famihealth.family_health_management.dto.request.vaccination_record.VaccinationRecordUpdateRequest;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
+import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
 import com.famihealth.family_health_management.dto.response.vaccination_record.VaccinationRecordDto;
 import com.famihealth.family_health_management.exception.BadRequestException;
 import com.famihealth.family_health_management.exception.ForbiddenException;
 import com.famihealth.family_health_management.exception.NotFoundException;
 import com.famihealth.family_health_management.mapper.VaccinationRecordMapper;
+import com.famihealth.family_health_management.model.Family;
 import com.famihealth.family_health_management.model.FamilyMember;
 import com.famihealth.family_health_management.model.VaccinationRecord;
 import com.famihealth.family_health_management.model.Vaccine;
+import com.famihealth.family_health_management.repository.FamilyRepository;
 import com.famihealth.family_health_management.repository.VaccinationRecordRepository;
 import com.famihealth.family_health_management.repository.VaccineRepository;
 import com.famihealth.family_health_management.service.SessionService;
@@ -33,6 +36,7 @@ public class VaccinationRecordServiceImpl implements VaccinationRecordService {
 	private final SessionService sessionService;
 	private final VaccinationRecordRepository vaccinationRecordRepository;
 	private final VaccineRepository vaccineRepository;
+	private final FamilyRepository familyRepository;
 	private final VaccinationRecordMapper vaccinationRecordMapper;
 	private final FamilyMemberAccessValidator accessValidator;
 
@@ -107,6 +111,41 @@ public class VaccinationRecordServiceImpl implements VaccinationRecordService {
 		return vaccinationRecordRepository.findByFamilyMember_Id(memberId).stream()
 				.map(vaccinationRecordMapper::toDto)
 				.toList();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public FilterOptionDto getFilterOptions(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		Family family = familyRepository.findByCreator_Id(session.getUserId());
+
+		// Get only vaccines that the family member has records for
+		List<VaccinationRecord> records = vaccinationRecordRepository.findByFamilyMember_Family_Id(family.getId());
+
+		// Set up dropdown of vaccines (id name pair)
+		List<FilterOptionDto.DropdownOption> vaccineOptions = records.stream()
+				.map(VaccinationRecord::getVaccine)
+				.distinct()
+				.map(vaccine -> new FilterOptionDto.DropdownOption(
+						vaccine.getId(), // value
+						vaccine.getName(), // label
+						null // optional description
+				))
+				.toList();
+
+		FilterOptionDto.DropdownFilterOption vaccineDropdown = new FilterOptionDto.DropdownFilterOption(
+				"vaccineId", // field name
+				"Vaccine", // label
+				vaccineOptions, // options
+				false // single-select
+		);
+
+		return new FilterOptionDto(
+				List.of(vaccineDropdown) // dropdown filters
+				, List.of() // boolean filters
+				, List.of() // date range filters
+				, List.of() // searchable fields
+		);
 	}
 
 	private SessionData requireSession(String sessionId) {

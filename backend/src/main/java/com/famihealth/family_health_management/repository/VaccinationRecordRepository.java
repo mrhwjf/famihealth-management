@@ -13,4 +13,6 @@ public interface VaccinationRecordRepository extends JpaRepository<VaccinationRe
 	List<VaccinationRecord> findByVaccine_Id(Integer vaccineId);
 
 	List<VaccinationRecord> findByAdministeredDateBetween(LocalDate start, LocalDate end);
+
+	List<VaccinationRecord> findByFamilyMember_Family_Id(Integer familyId);
 }

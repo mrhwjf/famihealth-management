@@ -22,6 +22,8 @@ import com.famihealth.family_health_management.dto.request.appointment.Appointme
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.appointment.AppointmentDto;
+import com.famihealth.family_health_management.dto.response.appointment.AppointmentFormDto;
+import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.service.AppointmentService;
 
@@ -29,7 +31,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/appointments")
 @RequiredArgsConstructor
 @Validated
 public class AppointmentController {
@@ -38,7 +40,7 @@ public class AppointmentController {
 
 	private final AppointmentService appointmentService;
 
-	@PostMapping("/appointments")
+	@PostMapping
 	public ResponseEntity<ApiResponse<AppointmentDto>> createAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @RequestBody AppointmentCreateRequest request) {
@@ -47,7 +49,7 @@ public class AppointmentController {
 				.body(ApiResponse.success("Appointment created", appointment));
 	}
 
-	@GetMapping("/appointments/{appointmentId}")
+	@GetMapping("/{appointmentId}")
 	public ResponseEntity<ApiResponse<AppointmentDto>> getAppointmentById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -55,7 +57,7 @@ public class AppointmentController {
 		return ResponseEntity.ok(ApiResponse.success("OK", appointment));
 	}
 
-	@GetMapping("/appointments")
+	@GetMapping
 	public ResponseEntity<ApiResponse<PageResponse<AppointmentDto>>> getAppointments(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @ModelAttribute @ParameterObject AppointmentFilterRequest filter,
@@ -64,7 +66,7 @@ public class AppointmentController {
 		return ResponseEntity.ok(ApiResponse.success("OK", appointments));
 	}
 
-	@PutMapping("/appointments/{appointmentId}")
+	@PutMapping("/{appointmentId}")
 	public ResponseEntity<ApiResponse<AppointmentDto>> updateAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId,
@@ -73,7 +75,7 @@ public class AppointmentController {
 		return ResponseEntity.ok(ApiResponse.success("Appointment updated", appointment));
 	}
 
-	@DeleteMapping("/appointments/{appointmentId}")
+	@DeleteMapping("/{appointmentId}")
 	public ResponseEntity<ApiResponse<Void>> deleteAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -81,11 +83,33 @@ public class AppointmentController {
 		return ResponseEntity.ok(ApiResponse.success("Appointment deleted", null));
 	}
 
-	@PostMapping("/appointments/{appointmentId}/complete")
+	@PostMapping("/{appointmentId}/complete")
 	public ResponseEntity<ApiResponse<AppointmentDto>> markAppointmentCompleted(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
 		AppointmentDto appointment = appointmentService.markAppointmentCompleted(sessionId, appointmentId);
 		return ResponseEntity.ok(ApiResponse.success("Appointment completed", appointment));
+	}
+
+	@GetMapping("/form-data")
+	public ResponseEntity<ApiResponse<AppointmentFormDto>> getAppointmentFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId) {
+		AppointmentFormDto formData = appointmentService.getAppointmentCreateFormData(sessionId);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
+	}
+
+	@GetMapping("/{appointmentId}/form-data")
+	public ResponseEntity<ApiResponse<AppointmentFormDto>> getAppointmentEditFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer appointmentId) {
+		AppointmentFormDto formData = appointmentService.getAppointmentEditFormData(sessionId, appointmentId);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
+	}
+
+	@GetMapping("filter-options")
+	public ResponseEntity<ApiResponse<FilterOptionDto>> getAppointmentFilterOptions(
+			@RequestHeader(name = SESSION_HEADER) String sessionId) {
+		FilterOptionDto filter = appointmentService.getAppointmentFilterOptions(sessionId);
+		return ResponseEntity.ok(ApiResponse.success("OK", filter));
 	}
 }

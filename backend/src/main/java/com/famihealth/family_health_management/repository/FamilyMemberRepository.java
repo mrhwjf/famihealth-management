@@ -15,4 +15,12 @@ public interface FamilyMemberRepository extends JpaRepository<FamilyMember, Inte
 	List<FamilyMember> findByNameContainingIgnoreCase(String name);
 
 	Set<Integer> findIdByFamily_Id(Integer familyId);
+
+	// Fetch all family members (patients) linked to a specific doctor
+	List<FamilyMember> findDistinctByMemberAccesses_DoctorId(Integer doctorId);
+
+	// Fetch all family members in a specific family using the family creator's user
+	// ID
+	List<FamilyMember> findByFamily_Creator_Id(Integer creatorUserId);
+
 }

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.famihealth.family_health_management.dto.request.vaccination_record.VaccinationRecordCreateRequest;
 import com.famihealth.family_health_management.dto.request.vaccination_record.VaccinationRecordUpdateRequest;
+import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
 import com.famihealth.family_health_management.dto.response.vaccination_record.VaccinationRecordDto;
 
 public interface VaccinationRecordService {
@@ -17,4 +18,6 @@ public interface VaccinationRecordService {
 	VaccinationRecordDto getRecordById(String sessionId, Integer recordId);
 
 	List<VaccinationRecordDto> getRecordsByMemberId(String sessionId, Integer memberId);
+
+	FilterOptionDto getFilterOptions(String sessionId);
 }

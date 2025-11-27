@@ -6,6 +6,8 @@ import com.famihealth.family_health_management.dto.request.appointment.Appointme
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentFilterRequest;
 import com.famihealth.family_health_management.dto.request.appointment.AppointmentUpdateRequest;
 import com.famihealth.family_health_management.dto.response.appointment.AppointmentDto;
+import com.famihealth.family_health_management.dto.response.appointment.AppointmentFormDto;
+import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 
 public interface AppointmentService {
@@ -22,5 +24,11 @@ public interface AppointmentService {
 	void deleteAppointment(String sessionId, Integer appointmentId);
 
 	AppointmentDto markAppointmentCompleted(String sessionId, Integer appointmentId);
+
+	AppointmentFormDto getAppointmentCreateFormData(String sessionId);
+
+	AppointmentFormDto getAppointmentEditFormData(String sessionId, Integer appointmentId);
+
+	FilterOptionDto getAppointmentFilterOptions(String sessionId);
 
 }

@@ -1,5 +1,7 @@
 package com.famihealth.family_health_management.controller;
 
+import java.util.List;
+
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -22,6 +24,7 @@ import com.famihealth.family_health_management.dto.request.family.FamilyUpdateRe
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
 import com.famihealth.family_health_management.service.FamilyService;
 
 import jakarta.validation.Valid;
@@ -95,5 +98,13 @@ public class FamilyController {
 			@PathVariable Integer userId) {
 		familyService.removeUserFromFamily(sessionId, familyId, userId);
 		return ResponseEntity.ok(ApiResponse.success("User removed from family", null));
+	}
+
+	@GetMapping("/{familyId}/access/members")
+	public ResponseEntity<ApiResponse<List<MemberAccessDto>>> getMembersAccessList(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer familyId) {
+		List<MemberAccessDto> accessList = familyService.getMembersAccessList(sessionId, familyId);
+		return ResponseEntity.ok(ApiResponse.success("OK", accessList));
 	}
 }

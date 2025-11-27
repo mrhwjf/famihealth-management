@@ -9,6 +9,7 @@ import com.famihealth.family_health_management.dto.request.medical_record.Medica
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.medical_document.MedicalDocumentDto;
 import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordDetailDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordFormDto;
 import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordSummaryDto;
 
 public interface MedicalRecordService {
@@ -29,4 +30,8 @@ public interface MedicalRecordService {
 	MedicalDocumentDto updateDocument(String sessionId, Integer documentId, MedicalDocumentUpdateRequest request);
 
 	void deleteDocument(String sessionId, Integer documentId);
+
+	MedicalRecordFormDto getMedicalRecordCreateForm(String sessionId);
+
+	MedicalRecordFormDto getMedicalRecordUpdateForm(String sessionId, Integer recordId);
 }

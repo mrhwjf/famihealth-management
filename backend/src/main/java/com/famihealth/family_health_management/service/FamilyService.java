@@ -12,6 +12,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
+import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
 
 public interface FamilyService {
 	// ========================
@@ -67,4 +68,6 @@ public interface FamilyService {
 	void linkDoctorToMember(String sessionId, Integer familyId, Integer memberId, Integer doctorId);
 
 	void unlinkDoctorFromMember(String sessionId, Integer familyId, Integer memberId, Integer doctorId);
+
+	List<MemberAccessDto> getMembersAccessList(String sessionId, Integer familyId);
 }

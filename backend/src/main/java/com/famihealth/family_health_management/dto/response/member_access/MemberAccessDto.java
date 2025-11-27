@@ -11,5 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MemberAccessDto {
 	private Integer memberId;
+	private String memberName;
 	private Integer doctorId;
+	private String doctorName;
 }

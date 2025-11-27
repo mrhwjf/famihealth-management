@@ -1,5 +1,7 @@
 package com.famihealth.family_health_management.controller;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.famihealth.family_health_management.dto.request.medical_record.MedicalRecordCreateRequest;
 import com.famihealth.family_health_management.dto.request.medical_record.MedicalRecordUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
+import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordDetailDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordFormDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordSummaryDto;
 import com.famihealth.family_health_management.service.MedicalRecordService;
 
 import jakarta.validation.Valid;
@@ -64,5 +69,30 @@ public class MedicalRecordController {
 			@PathVariable Integer id) {
 		medicalRecordService.deleteRecord(sessionId, id);
 		return ResponseEntity.ok(ApiResponse.success("Medical record deleted", null));
+	}
+
+	@GetMapping("/form-data")
+	public ResponseEntity<ApiResponse<MedicalRecordFormDto>> getFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId) {
+		MedicalRecordFormDto formData = medicalRecordService.getMedicalRecordCreateForm(sessionId);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
+	}
+
+	@GetMapping("/{id}/form-data")
+	public ResponseEntity<ApiResponse<MedicalRecordFormDto>> getUpdateFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer id) {
+		MedicalRecordFormDto formData = medicalRecordService.getMedicalRecordUpdateForm(sessionId, id);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
+	}
+
+	@GetMapping("family-member/{familyMemberId}")
+	public ResponseEntity<ApiResponse<PageResponse<MedicalRecordSummaryDto>>> getByFamilyMember(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer familyMemberId,
+			@PageableDefault(size = 10, page = 0) Pageable pageable) {
+		PageResponse<MedicalRecordSummaryDto> records = medicalRecordService
+				.getRecordsByFamilyMember(sessionId, familyMemberId, pageable);
+		return ResponseEntity.ok(ApiResponse.success("OK", records));
 	}
 }

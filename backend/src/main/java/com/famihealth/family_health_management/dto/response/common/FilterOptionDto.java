@@ -3,12 +3,14 @@ package com.famihealth.family_health_management.dto.response.common;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class FilterOptionDto {
 	private List<DropdownFilterOption> dropdowns;
 	private List<BooleanFilterOption> booleans;

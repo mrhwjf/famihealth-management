@@ -16,6 +16,7 @@ import com.famihealth.family_health_management.dto.response.auth.SessionData;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.medical_document.MedicalDocumentDto;
 import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordDetailDto;
+import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordFormDto;
 import com.famihealth.family_health_management.dto.response.medical_record.MedicalRecordSummaryDto;
 import com.famihealth.family_health_management.exception.ForbiddenException;
 import com.famihealth.family_health_management.exception.NotFoundException;
@@ -171,6 +172,27 @@ public class MedicalRecordServiceImpl implements MedicalRecordService {
 		MedicalRecord record = document.getMedicalRecord();
 		ensureCanModify(session, record);
 		medicalDocumentRepository.delete(document);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public MedicalRecordFormDto getMedicalRecordCreateForm(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		List<FamilyMember> familyMembers = familyMemberRepository.findByFamily_Creator_Id(session.getUserId());
+		List<Facility> facilities = facilityRepository.findAll();
+		return medicalRecordMapper.toFormDto(familyMembers, facilities, null);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public MedicalRecordFormDto getMedicalRecordUpdateForm(String sessionId, Integer recordId) {
+		SessionData session = requireSession(sessionId);
+		MedicalRecord record = requireMedicalRecord(recordId);
+		ensureCanView(session, record);
+
+		List<FamilyMember> familyMembers = familyMemberRepository.findByFamily_Creator_Id(session.getUserId());
+		List<Facility> facilities = facilityRepository.findAll();
+		return medicalRecordMapper.toFormDto(familyMembers, facilities, record);
 	}
 
 	private Facility resolveFacility(Integer facilityId) {
