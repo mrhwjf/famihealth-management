@@ -23,11 +23,14 @@ import com.famihealth.family_health_management.service.AllergyService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Quản lý dị ứng", description = "API quản lý thông tin dị ứng của các thành viên trong gia đình")
 public class AllergyController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -35,6 +38,7 @@ public class AllergyController {
 	private final AllergyService allergyService;
 
 	@PostMapping("/family-members/{memberId}/allergies")
+	@Operation(summary = "Tạo dị ứng cho thành viên", description = "Thêm mới thông tin dị ứng cho một thành viên gia đình sau khi xác thực phiên người dùng.")
 	public ResponseEntity<ApiResponse<AllergyDto>> createAllergy(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer memberId,
@@ -45,6 +49,7 @@ public class AllergyController {
 	}
 
 	@PutMapping("/allergies/{allergyId}")
+	@Operation(summary = "Cập nhật dị ứng", description = "Điều chỉnh thông tin dị ứng dựa trên mã định danh và quyền của người dùng trong phiên.")
 	public ResponseEntity<ApiResponse<AllergyDto>> updateAllergy(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer allergyId,
@@ -54,6 +59,7 @@ public class AllergyController {
 	}
 
 	@DeleteMapping("/allergies/{allergyId}")
+	@Operation(summary = "Xóa dị ứng", description = "Loại bỏ thông tin dị ứng cụ thể của thành viên gia đình khỏi hồ sơ sức khỏe.")
 	public ResponseEntity<ApiResponse<Void>> deleteAllergy(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer allergyId) {
@@ -62,6 +68,7 @@ public class AllergyController {
 	}
 
 	@GetMapping("/allergies/{allergyId}")
+	@Operation(summary = "Xem chi tiết dị ứng", description = "Lấy dữ liệu chi tiết của một dị ứng theo ID sau khi xác thực quyền truy cập bằng mã phiên.")
 	public ResponseEntity<ApiResponse<AllergyDto>> getAllergyById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer allergyId) {
@@ -70,6 +77,7 @@ public class AllergyController {
 	}
 
 	@GetMapping("/family-members/{memberId}/allergies")
+	@Operation(summary = "Liệt kê dị ứng của thành viên", description = "Truy xuất danh sách đầy đủ các dị ứng của một thành viên gia đình dựa trên mã phiên đăng nhập.")
 	public ResponseEntity<ApiResponse<List<AllergyDto>>> getAllergiesByMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer memberId) {

@@ -29,11 +29,14 @@ import com.famihealth.family_health_management.service.HealthStatService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/families/{familyId}/members/{memberId}/health-stats")
 @Validated
 @RequiredArgsConstructor
+@Tag(name = "Chỉ số sức khỏe", description = "API ghi nhận và theo dõi các chỉ số sức khỏe của thành viên")
 public class HealthStatController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -41,6 +44,7 @@ public class HealthStatController {
 	private final HealthStatService healthStatService;
 
 	@PostMapping
+	@Operation(summary = "Ghi nhận chỉ số sức khỏe", description = "Tạo mới bản ghi chỉ số sức khỏe cho một thành viên trong gia đình.")
 	public ResponseEntity<ApiResponse<HealthStatDto>> create(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -51,6 +55,7 @@ public class HealthStatController {
 	}
 
 	@PutMapping("/{healthStatId}")
+	@Operation(summary = "Cập nhật chỉ số sức khỏe", description = "Chỉnh sửa dữ liệu của một chỉ số sức khỏe đã ghi nhận.")
 	public ResponseEntity<ApiResponse<HealthStatDto>> update(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -62,6 +67,7 @@ public class HealthStatController {
 	}
 
 	@DeleteMapping("/{healthStatId}")
+	@Operation(summary = "Xóa chỉ số sức khỏe", description = "Loại bỏ bản ghi chỉ số sức khỏe khỏi hồ sơ thành viên.")
 	public ResponseEntity<ApiResponse<Void>> delete(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -72,6 +78,7 @@ public class HealthStatController {
 	}
 
 	@GetMapping("/{healthStatId}")
+	@Operation(summary = "Xem chi tiết chỉ số sức khỏe", description = "Truy xuất thông tin chi tiết của một chỉ số sức khỏe theo ID.")
 	public ResponseEntity<ApiResponse<HealthStatDetailDto>> getById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -82,6 +89,7 @@ public class HealthStatController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Danh sách chỉ số sức khỏe", description = "Lọc và phân trang danh sách chỉ số sức khỏe của thành viên theo bộ lọc được cung cấp.")
 	public ResponseEntity<ApiResponse<PageResponse<HealthStatSummaryDto>>> getAll(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,

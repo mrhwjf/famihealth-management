@@ -24,22 +24,27 @@ import com.famihealth.family_health_management.service.RoleService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/roles")
 @Validated
 @RequiredArgsConstructor
+@Tag(name = "Vai trò hệ thống", description = "API quản trị danh sách vai trò và quyền truy cập")
 public class RoleController {
 
 	private final RoleService roleService;
 
 	@PostMapping
+	@Operation(summary = "Tạo vai trò", description = "Thêm mới một vai trò hệ thống với tập quyền tương ứng.")
 	public ResponseEntity<ApiResponse<RoleDto>> create(@Valid @RequestBody RoleCreateRequest req) {
 		RoleDto dto = roleService.create(req);
 		return ResponseEntity.ok(ApiResponse.success("Role created", dto));
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật vai trò", description = "Điều chỉnh tên và quyền của vai trò dựa trên ID.")
 	public ResponseEntity<ApiResponse<RoleDto>> updateById(@PathVariable Integer id,
 			@Valid @RequestBody RoleUpdateRequest req) {
 		RoleDto dto = roleService.updateById(id, req);
@@ -47,17 +52,20 @@ public class RoleController {
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa vai trò", description = "Loại bỏ vai trò khỏi hệ thống và thu hồi quyền liên quan.")
 	public ResponseEntity<ApiResponse<Void>> deleteById(@PathVariable Integer id) {
 		roleService.deleteById(id);
 		return ResponseEntity.ok(ApiResponse.success("Role deleted", null));
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết vai trò", description = "Lấy thông tin chi tiết của một vai trò theo mã định danh.")
 	public ResponseEntity<ApiResponse<RoleDto>> getById(@PathVariable Integer id) {
 		return ResponseEntity.ok(ApiResponse.success("OK", roleService.getById(id)));
 	}
 
 	@GetMapping
+	@Operation(summary = "Danh sách vai trò", description = "Phân trang và lọc danh sách vai trò theo tên để quản trị.")
 	public ResponseEntity<ApiResponse<PageResponse<RoleDto>>> getAll(
 			@RequestParam(name = "name", required = false) String name,
 			@ParameterObject @PageableDefault(size = 10, sort = "id") Pageable pageable) {

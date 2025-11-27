@@ -15,16 +15,20 @@ import com.famihealth.family_health_management.service.OAuthService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/oauth")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Đăng nhập OAuth", description = "API hỗ trợ đăng nhập qua nhà cung cấp OAuth bên thứ ba")
 public class OAuthController {
 
 	private final OAuthService oAuthService;
 
 	@PostMapping("/google")
+	@Operation(summary = "Đăng nhập bằng Google", description = "Thực hiện xác thực người dùng thông qua Google OAuth và cấp token truy cập ứng dụng.")
 	public ResponseEntity<ApiResponse<AuthResponse>> handleGoogleLogin(@Valid @RequestBody GoogleOAuthRequest request) {
 		AuthResponse response = oAuthService.handleGoogleLogin(request);
 		return ResponseEntity.status(HttpStatus.OK)

@@ -29,11 +29,14 @@ import com.famihealth.family_health_management.service.AppointmentService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/appointments")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Quản lý lịch hẹn", description = "API phục vụ tạo, cập nhật, hoàn tất và tra cứu lịch hẹn khám bệnh")
 public class AppointmentController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -41,6 +44,7 @@ public class AppointmentController {
 	private final AppointmentService appointmentService;
 
 	@PostMapping
+	@Operation(summary = "Tạo lịch hẹn mới", description = "Khởi tạo lịch hẹn khám bệnh cho người dùng dựa trên thông tin yêu cầu và mã phiên xác thực.")
 	public ResponseEntity<ApiResponse<AppointmentDto>> createAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @RequestBody AppointmentCreateRequest request) {
@@ -50,6 +54,7 @@ public class AppointmentController {
 	}
 
 	@GetMapping("/{appointmentId}")
+	@Operation(summary = "Xem chi tiết lịch hẹn", description = "Lấy thông tin chi tiết của một lịch hẹn cụ thể dựa trên ID và quyền của người dùng.")
 	public ResponseEntity<ApiResponse<AppointmentDto>> getAppointmentById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -58,6 +63,7 @@ public class AppointmentController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Tìm kiếm lịch hẹn", description = "Lọc và phân trang danh sách lịch hẹn dựa trên bộ tiêu chí tìm kiếm và phiên đăng nhập của người dùng.")
 	public ResponseEntity<ApiResponse<PageResponse<AppointmentDto>>> getAppointments(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @ModelAttribute @ParameterObject AppointmentFilterRequest filter,
@@ -67,6 +73,7 @@ public class AppointmentController {
 	}
 
 	@PutMapping("/{appointmentId}")
+	@Operation(summary = "Cập nhật lịch hẹn", description = "Chỉnh sửa thông tin lịch hẹn đã tạo dựa trên ID và dữ liệu mới từ người dùng.")
 	public ResponseEntity<ApiResponse<AppointmentDto>> updateAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId,
@@ -76,6 +83,7 @@ public class AppointmentController {
 	}
 
 	@DeleteMapping("/{appointmentId}")
+	@Operation(summary = "Xóa lịch hẹn", description = "Hủy bỏ một lịch hẹn dựa trên mã định danh và quyền của người dùng trong gia đình.")
 	public ResponseEntity<ApiResponse<Void>> deleteAppointment(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -84,6 +92,7 @@ public class AppointmentController {
 	}
 
 	@PostMapping("/{appointmentId}/complete")
+	@Operation(summary = "Đánh dấu hoàn tất lịch hẹn", description = "Chuyển trạng thái lịch hẹn sang đã hoàn thành sau khi dịch vụ khám kết thúc.")
 	public ResponseEntity<ApiResponse<AppointmentDto>> markAppointmentCompleted(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -92,6 +101,7 @@ public class AppointmentController {
 	}
 
 	@GetMapping("/form-data")
+	@Operation(summary = "Lấy dữ liệu khởi tạo lịch hẹn", description = "Cung cấp danh mục lựa chọn cần thiết để người dùng tạo lịch hẹn mới.")
 	public ResponseEntity<ApiResponse<AppointmentFormDto>> getAppointmentFormData(
 			@RequestHeader(name = SESSION_HEADER) String sessionId) {
 		AppointmentFormDto formData = appointmentService.getAppointmentCreateFormData(sessionId);
@@ -99,6 +109,7 @@ public class AppointmentController {
 	}
 
 	@GetMapping("/{appointmentId}/form-data")
+	@Operation(summary = "Lấy dữ liệu chỉnh sửa lịch hẹn", description = "Cung cấp thông tin tham chiếu để chỉnh sửa lịch hẹn hiện có dựa trên ID.")
 	public ResponseEntity<ApiResponse<AppointmentFormDto>> getAppointmentEditFormData(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer appointmentId) {
@@ -107,6 +118,7 @@ public class AppointmentController {
 	}
 
 	@GetMapping("filter-options")
+	@Operation(summary = "Lấy bộ lọc lịch hẹn", description = "Lấy danh sách các tùy chọn bộ lọc được hỗ trợ khi tìm kiếm lịch hẹn.")
 	public ResponseEntity<ApiResponse<FilterOptionDto>> getAppointmentFilterOptions(
 			@RequestHeader(name = SESSION_HEADER) String sessionId) {
 		FilterOptionDto filter = appointmentService.getAppointmentFilterOptions(sessionId);

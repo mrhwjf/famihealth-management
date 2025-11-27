@@ -29,11 +29,14 @@ import com.famihealth.family_health_management.service.FamilyService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/families")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Quản lý gia đình", description = "API quản lý hồ sơ gia đình và phân quyền truy cập thành viên")
 public class FamilyController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -41,6 +44,7 @@ public class FamilyController {
 	private final FamilyService familyService;
 
 	@PostMapping
+	@Operation(summary = "Tạo gia đình", description = "Khởi tạo hồ sơ gia đình mới và gán chủ sở hữu dựa trên mã phiên.")
 	public ResponseEntity<ApiResponse<FamilyDto>> create(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @RequestBody FamilyCreateRequest request) {
@@ -49,6 +53,7 @@ public class FamilyController {
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật gia đình", description = "Chỉnh sửa thông tin chi tiết của gia đình dựa trên mã gia đình.")
 	public ResponseEntity<ApiResponse<FamilyDto>> update(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id,
@@ -58,6 +63,7 @@ public class FamilyController {
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết gia đình", description = "Lấy thông tin hồ sơ của một gia đình cụ thể sau khi xác thực phiên.")
 	public ResponseEntity<ApiResponse<FamilyDto>> getById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
@@ -66,6 +72,7 @@ public class FamilyController {
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa gia đình", description = "Loại bỏ một gia đình khỏi hệ thống và thu hồi quyền truy cập liên quan.")
 	public ResponseEntity<ApiResponse<Void>> delete(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
@@ -74,6 +81,7 @@ public class FamilyController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Tìm kiếm gia đình", description = "Lọc và phân trang danh sách gia đình theo tiêu chí được cung cấp.")
 	public ResponseEntity<ApiResponse<PageResponse<FamilyDto>>> getAll(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @ModelAttribute @ParameterObject FamilyFilterRequest filter,
@@ -83,6 +91,7 @@ public class FamilyController {
 	}
 
 	@PostMapping("/{familyId}/access/users/{userId}")
+	@Operation(summary = "Thêm người dùng vào gia đình", description = "Cấp quyền để một người dùng tham gia gia đình và truy cập dữ liệu liên quan.")
 	public ResponseEntity<ApiResponse<Void>> addUser(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -92,6 +101,7 @@ public class FamilyController {
 	}
 
 	@DeleteMapping("/{familyId}/access/users/{userId}")
+	@Operation(summary = "Xóa người dùng khỏi gia đình", description = "Thu hồi quyền truy cập của một người dùng đối với gia đình cụ thể.")
 	public ResponseEntity<ApiResponse<Void>> removeUser(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -101,6 +111,7 @@ public class FamilyController {
 	}
 
 	@GetMapping("/{familyId}/access/members")
+	@Operation(summary = "Danh sách quyền truy cập thành viên", description = "Liệt kê các thành viên và quyền truy cập của họ trong một gia đình.")
 	public ResponseEntity<ApiResponse<List<MemberAccessDto>>> getMembersAccessList(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {

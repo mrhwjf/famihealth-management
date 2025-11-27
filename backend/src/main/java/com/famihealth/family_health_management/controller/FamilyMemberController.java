@@ -24,11 +24,14 @@ import com.famihealth.family_health_management.service.FamilyService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/families/{familyId}/members")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Thành viên gia đình", description = "API quản lý hồ sơ thành viên và liên kết quyền truy cập với người dùng, bác sĩ")
 public class FamilyMemberController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -36,6 +39,7 @@ public class FamilyMemberController {
 	private final FamilyService familyService;
 
 	@PostMapping
+	@Operation(summary = "Tạo thành viên gia đình", description = "Thêm mới một thành viên vào gia đình và thiết lập thông tin cơ bản.")
 	public ResponseEntity<ApiResponse<FamilyMemberSummaryDto>> createMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -45,6 +49,7 @@ public class FamilyMemberController {
 	}
 
 	@PutMapping("{memberId}")
+	@Operation(summary = "Cập nhật thành viên gia đình", description = "Điều chỉnh thông tin chi tiết của thành viên dựa trên mã thành viên.")
 	public ResponseEntity<ApiResponse<FamilyMemberSummaryDto>> updateMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -55,6 +60,7 @@ public class FamilyMemberController {
 	}
 
 	@DeleteMapping("{memberId}")
+	@Operation(summary = "Xóa thành viên gia đình", description = "Loại bỏ thành viên khỏi gia đình và thu hồi quyền liên kết.")
 	public ResponseEntity<ApiResponse<Void>> deleteMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -64,6 +70,7 @@ public class FamilyMemberController {
 	}
 
 	@GetMapping("{memberId}")
+	@Operation(summary = "Xem chi tiết thành viên", description = "Truy xuất thông tin chi tiết của một thành viên trong gia đình.")
 	public ResponseEntity<ApiResponse<FamilyMemberSummaryDto>> getMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -73,6 +80,7 @@ public class FamilyMemberController {
 	}
 
 	@PostMapping("{memberId}/link-user")
+	@Operation(summary = "Liên kết thành viên với người dùng", description = "Gán một tài khoản người dùng cụ thể làm người đại diện cho thành viên.")
 	public ResponseEntity<ApiResponse<Void>> linkUser(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -83,6 +91,7 @@ public class FamilyMemberController {
 	}
 
 	@DeleteMapping("{memberId}/unlink-user")
+	@Operation(summary = "Hủy liên kết người dùng", description = "Xóa mối liên kết giữa thành viên và tài khoản người dùng tương ứng.")
 	public ResponseEntity<ApiResponse<Void>> unlinkUser(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -93,6 +102,7 @@ public class FamilyMemberController {
 	}
 
 	@PostMapping("{memberId}/link-doctor")
+	@Operation(summary = "Liên kết bác sĩ theo dõi", description = "Gán một bác sĩ phụ trách theo dõi hồ sơ sức khỏe của thành viên.")
 	public ResponseEntity<ApiResponse<Void>> linkDoctor(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -103,6 +113,7 @@ public class FamilyMemberController {
 	}
 
 	@DeleteMapping("{memberId}/unlink-doctor")
+	@Operation(summary = "Hủy liên kết bác sĩ", description = "Loại bỏ bác sĩ khỏi danh sách theo dõi của thành viên.")
 	public ResponseEntity<ApiResponse<Void>> unlinkDoctor(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
@@ -113,6 +124,7 @@ public class FamilyMemberController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Danh sách thành viên gia đình", description = "Liệt kê tất cả thành viên thuộc một gia đình sau khi xác thực phiên.")
 	public ResponseEntity<ApiResponse<List<FamilyMemberSummaryDto>>> getAll(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {

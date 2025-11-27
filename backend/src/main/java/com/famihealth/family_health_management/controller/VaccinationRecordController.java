@@ -23,11 +23,14 @@ import com.famihealth.family_health_management.service.VaccinationRecordService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Hồ sơ tiêm chủng", description = "API quản lý lịch sử tiêm chủng của các thành viên gia đình")
 public class VaccinationRecordController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -35,6 +38,7 @@ public class VaccinationRecordController {
 	private final VaccinationRecordService vaccinationRecordService;
 
 	@PostMapping("/family-members/{memberId}/vaccination-records")
+	@Operation(summary = "Ghi nhận mũi tiêm", description = "Thêm mới bản ghi tiêm chủng cho thành viên gia đình đã chọn.")
 	public ResponseEntity<ApiResponse<VaccinationRecordDto>> createRecord(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer memberId,
@@ -45,6 +49,7 @@ public class VaccinationRecordController {
 	}
 
 	@PutMapping("/vaccination-records/{recordId}")
+	@Operation(summary = "Cập nhật mũi tiêm", description = "Chỉnh sửa thông tin bản ghi tiêm chủng theo mã bản ghi.")
 	public ResponseEntity<ApiResponse<VaccinationRecordDto>> updateRecord(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer recordId,
@@ -54,6 +59,7 @@ public class VaccinationRecordController {
 	}
 
 	@DeleteMapping("/vaccination-records/{recordId}")
+	@Operation(summary = "Xóa mũi tiêm", description = "Loại bỏ bản ghi tiêm chủng khỏi hồ sơ thành viên.")
 	public ResponseEntity<ApiResponse<Void>> deleteRecord(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer recordId) {
@@ -62,6 +68,7 @@ public class VaccinationRecordController {
 	}
 
 	@GetMapping("/vaccination-records/{recordId}")
+	@Operation(summary = "Xem chi tiết mũi tiêm", description = "Tra cứu thông tin chi tiết của một bản ghi tiêm chủng.")
 	public ResponseEntity<ApiResponse<VaccinationRecordDto>> getRecordById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer recordId) {
@@ -70,6 +77,7 @@ public class VaccinationRecordController {
 	}
 
 	@GetMapping("/family-members/{memberId}/vaccination-records")
+	@Operation(summary = "Danh sách mũi tiêm của thành viên", description = "Liệt kê tất cả bản ghi tiêm chủng của một thành viên dựa trên mã phiên.")
 	public ResponseEntity<ApiResponse<List<VaccinationRecordDto>>> getRecordsByMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer memberId) {

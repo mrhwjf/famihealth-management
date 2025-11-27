@@ -26,11 +26,14 @@ import com.famihealth.family_health_management.service.MedicalRecordService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/medical-records")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Hồ sơ y tế", description = "API quản lý hồ sơ khám chữa bệnh và biểu mẫu liên quan")
 public class MedicalRecordController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -38,6 +41,7 @@ public class MedicalRecordController {
 	private final MedicalRecordService medicalRecordService;
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết hồ sơ y tế", description = "Tra cứu thông tin chi tiết của hồ sơ y tế dựa trên mã định danh.")
 	public ResponseEntity<ApiResponse<MedicalRecordDetailDto>> getById(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
@@ -46,6 +50,7 @@ public class MedicalRecordController {
 	}
 
 	@PostMapping
+	@Operation(summary = "Tạo hồ sơ y tế", description = "Khởi tạo hồ sơ y tế mới cho thành viên dựa trên thông tin khám chữa bệnh.")
 	public ResponseEntity<ApiResponse<MedicalRecordDetailDto>> create(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@Valid @RequestBody MedicalRecordCreateRequest request) {
@@ -55,6 +60,7 @@ public class MedicalRecordController {
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật hồ sơ y tế", description = "Chỉnh sửa thông tin của hồ sơ y tế đã tồn tại.")
 	public ResponseEntity<ApiResponse<MedicalRecordDetailDto>> update(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id,
@@ -64,6 +70,7 @@ public class MedicalRecordController {
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa hồ sơ y tế", description = "Loại bỏ hồ sơ y tế khỏi hệ thống và dừng chia sẻ dữ liệu.")
 	public ResponseEntity<ApiResponse<Void>> delete(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
@@ -72,6 +79,7 @@ public class MedicalRecordController {
 	}
 
 	@GetMapping("/form-data")
+	@Operation(summary = "Lấy dữ liệu tạo hồ sơ", description = "Cung cấp danh sách lựa chọn cần thiết để tạo hồ sơ y tế mới.")
 	public ResponseEntity<ApiResponse<MedicalRecordFormDto>> getFormData(
 			@RequestHeader(name = SESSION_HEADER) String sessionId) {
 		MedicalRecordFormDto formData = medicalRecordService.getMedicalRecordCreateForm(sessionId);
@@ -79,6 +87,7 @@ public class MedicalRecordController {
 	}
 
 	@GetMapping("/{id}/form-data")
+	@Operation(summary = "Lấy dữ liệu chỉnh sửa hồ sơ", description = "Cung cấp thông tin tham chiếu để chỉnh sửa hồ sơ y tế hiện hữu.")
 	public ResponseEntity<ApiResponse<MedicalRecordFormDto>> getUpdateFormData(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
@@ -87,6 +96,7 @@ public class MedicalRecordController {
 	}
 
 	@GetMapping("family-member/{familyMemberId}")
+	@Operation(summary = "Danh sách hồ sơ của thành viên", description = "Phân trang danh sách hồ sơ y tế của một thành viên gia đình dựa trên quyền phiên.")
 	public ResponseEntity<ApiResponse<PageResponse<MedicalRecordSummaryDto>>> getByFamilyMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyMemberId,

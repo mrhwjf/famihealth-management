@@ -25,38 +25,46 @@ import com.famihealth.family_health_management.service.FacilityService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/facilities")
 @Validated
 @RequiredArgsConstructor
+@Tag(name = "Quản lý cơ sở y tế", description = "API quản lý danh sách cơ sở y tế hợp tác với hệ thống")
 public class FacilityController {
 
 	private final FacilityService service;
 
 	@PostMapping
+	@Operation(summary = "Tạo cơ sở y tế", description = "Thêm mới thông tin một cơ sở y tế bao gồm tên và địa chỉ liên hệ.")
 	public ResponseEntity<ApiResponse<FacilityDto>> create(@Valid @RequestBody FacilityCreateRequest req) {
 		return ResponseEntity.ok(ApiResponse.success("Facility created", service.create(req)));
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật cơ sở y tế", description = "Điều chỉnh thông tin của một cơ sở y tế dựa trên mã định danh.")
 	public ResponseEntity<ApiResponse<FacilityDto>> updateById(@PathVariable Integer id,
 			@Valid @RequestBody FacilityUpdateRequest req) {
 		return ResponseEntity.ok(ApiResponse.success("Facility updated", service.updateById(id, req)));
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa cơ sở y tế", description = "Gỡ bỏ cơ sở y tế khỏi hệ thống quản trị.")
 	public ResponseEntity<ApiResponse<Void>> deleteById(@PathVariable Integer id) {
 		service.deleteById(id);
 		return ResponseEntity.ok(ApiResponse.success("Facility deleted", null));
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết cơ sở y tế", description = "Tra cứu thông tin của một cơ sở y tế cụ thể theo ID.")
 	public ResponseEntity<ApiResponse<FacilityDto>> getById(@PathVariable Integer id) {
 		return ResponseEntity.ok(ApiResponse.success("OK", service.getById(id)));
 	}
 
 	@GetMapping
+	@Operation(summary = "Tìm kiếm cơ sở y tế", description = "Phân trang và lọc danh sách cơ sở y tế theo tên và các tiêu chí sắp xếp.")
 	public ResponseEntity<ApiResponse<PageResponse<FacilityDto>>> getAll(
 			@RequestParam(name = "name", required = false) String name,
 			@ParameterObject @PageableDefault(page = 0, size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {

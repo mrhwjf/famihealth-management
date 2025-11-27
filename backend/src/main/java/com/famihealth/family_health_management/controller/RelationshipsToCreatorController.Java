@@ -22,16 +22,20 @@ import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.relationships_to_creator.RelationshipsToCreatorDto;
 import com.famihealth.family_health_management.service.RelationshipsToCreatorService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @RestController
 @RequestMapping("/api/v1/relationships-to-creator")
 @Validated
 @RequiredArgsConstructor
+@Tag(name = "Quan hệ với người tạo", description = "API quản lý danh mục mối quan hệ giữa các thành viên và người tạo hồ sơ")
 public class RelationshipsToCreatorController {
 	private final RelationshipsToCreatorService service;
 
 	@PostMapping
+	@Operation(summary = "Tạo mối quan hệ", description = "Thêm mới một loại quan hệ giữa thành viên và người tạo hồ sơ.")
 	public ResponseEntity<ApiResponse<RelationshipsToCreatorDto>> create(
 			@Valid @RequestBody RelationshipsToCreatorCreateRequest req) {
 
@@ -39,6 +43,7 @@ public class RelationshipsToCreatorController {
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật mối quan hệ", description = "Điều chỉnh thông tin tên gọi của mối quan hệ dựa trên ID.")
 	public ResponseEntity<ApiResponse<RelationshipsToCreatorDto>> updateById(@PathVariable Integer id,
 			@Valid @RequestBody RelationshipsToCreatorUpdateRequest req) {
 
@@ -46,17 +51,20 @@ public class RelationshipsToCreatorController {
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa mối quan hệ", description = "Loại bỏ một mối quan hệ khỏi danh mục quản trị.")
 	public ResponseEntity<ApiResponse<Void>> deleteById(@PathVariable Integer id) {
 		service.deleteById(id);
 		return ResponseEntity.ok(ApiResponse.success("Relationship to creator deleted", null));
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết mối quan hệ", description = "Tra cứu thông tin chi tiết của mối quan hệ theo mã định danh.")
 	public ResponseEntity<ApiResponse<RelationshipsToCreatorDto>> getById(@PathVariable Integer id) {
 		return ResponseEntity.ok(ApiResponse.success("OK", service.getById(id)));
 	}
 
 	@GetMapping
+	@Operation(summary = "Danh sách mối quan hệ", description = "Phân trang và lọc các mối quan hệ theo tên để phục vụ quản trị.")
 	public ResponseEntity<ApiResponse<PageResponse<RelationshipsToCreatorDto>>> getAll(
 			@RequestParam(name = "name", required = false) String name,
 			@ParameterObject @PageableDefault(size = 10, sort = "id") Pageable pageable) {

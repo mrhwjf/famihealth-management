@@ -28,37 +28,45 @@ import com.famihealth.family_health_management.service.UserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @Validated
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@Tag(name = "Quản lý người dùng", description = "API quản trị hồ sơ và cấu hình người dùng hệ thống")
 public class UserController {
 	private final UserService service;
 
 	@PostMapping
+	@Operation(summary = "Tạo người dùng mới", description = "Thêm người dùng vào hệ thống với thông tin và vai trò được chỉ định.")
 	public ResponseEntity<ApiResponse<UserDetailDto>> create(@Valid @RequestBody UserCreateRequest request) {
 		return ResponseEntity.ok(ApiResponse.success("User created", service.create(request)));
 	}
 
 	@PutMapping("/{id}")
+	@Operation(summary = "Cập nhật người dùng", description = "Điều chỉnh thông tin tài khoản người dùng dựa trên ID.")
 	public ResponseEntity<ApiResponse<UserDetailDto>> updateById(@PathVariable Integer id,
 			@Valid @RequestBody UserUpdateRequest request) {
 		return ResponseEntity.ok(ApiResponse.success("User updated", service.updateById(id, request)));
 	}
 
 	@DeleteMapping("/{id}")
+	@Operation(summary = "Xóa người dùng", description = "Loại bỏ tài khoản người dùng khỏi hệ thống quản trị.")
 	public ResponseEntity<ApiResponse<Void>> deleteById(@PathVariable Integer id) {
 		service.deleteById(id);
 		return ResponseEntity.ok(ApiResponse.success("User deleted", null));
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Xem chi tiết người dùng", description = "Tra cứu thông tin hồ sơ của một người dùng cụ thể.")
 	public ResponseEntity<ApiResponse<UserDetailDto>> getById(@PathVariable Integer id) {
 		return ResponseEntity.ok(ApiResponse.success("OK", service.getById(id)));
 	}
 
 	@GetMapping
+	@Operation(summary = "Tìm kiếm người dùng", description = "Phân trang và lọc danh sách người dùng theo điều kiện tìm kiếm.")
 	public ResponseEntity<ApiResponse<PageResponse<UserSummaryDto>>> getAll(
 			@Valid @ModelAttribute @ParameterObject UserFilterRequest filter,
 			@ParameterObject @PageableDefault(size = 10, sort = "id") Pageable pageable) {
@@ -68,18 +76,21 @@ public class UserController {
 	}
 
 	@GetMapping("/form-data")
+	@Operation(summary = "Lấy dữ liệu tạo người dùng", description = "Cung cấp danh mục lựa chọn khi khởi tạo người dùng mới.")
 	public ResponseEntity<ApiResponse<UserFormDto>> getCreateFormData() {
 		UserFormDto formData = service.getCreateFormData();
 		return ResponseEntity.ok(ApiResponse.success("OK", formData));
 	}
 
 	@GetMapping("/{id}/form-data")
+	@Operation(summary = "Lấy dữ liệu chỉnh sửa người dùng", description = "Cung cấp thông tin tham chiếu để chỉnh sửa hồ sơ người dùng hiện tại.")
 	public ResponseEntity<ApiResponse<UserFormDto>> getEditFormData(@PathVariable Integer id) {
 		UserFormDto formData = service.getEditFormData(id);
 		return ResponseEntity.ok(ApiResponse.success("OK", formData));
 	}
 
 	@GetMapping("/filter-options")
+	@Operation(summary = "Lấy tùy chọn bộ lọc", description = "Trả về danh sách các giá trị lọc người dùng được hỗ trợ trên giao diện quản trị.")
 	public ResponseEntity<ApiResponse<FilterOptionDto>> getFilterOptions() {
 		FilterOptionDto filterOptions = service.getFilterOptions();
 		return ResponseEntity.ok(ApiResponse.success("OK", filterOptions));

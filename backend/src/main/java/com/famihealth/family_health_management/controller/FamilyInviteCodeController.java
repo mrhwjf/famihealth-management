@@ -15,11 +15,14 @@ import com.famihealth.family_health_management.dto.response.family_invite_code.F
 import com.famihealth.family_health_management.service.FamilyInviteCodeService;
 
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/v1/families/{familyId}/invite-code")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Mã mời gia đình", description = "API quản lý mã mời tham gia gia đình và trạng thái kích hoạt")
 public class FamilyInviteCodeController {
 
 	private static final String SESSION_HEADER = "X-Session-Id";
@@ -27,6 +30,7 @@ public class FamilyInviteCodeController {
 	private final FamilyInviteCodeService familyInviteCodeService;
 
 	@GetMapping
+	@Operation(summary = "Lấy mã mời hiện tại", description = "Truy xuất mã mời đang có hiệu lực của gia đình dựa trên mã phiên của người dùng.")
 	public ResponseEntity<ApiResponse<FamilyInviteCodeDto>> getInviteCode(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {
@@ -35,6 +39,7 @@ public class FamilyInviteCodeController {
 	}
 
 	@PostMapping("/regenerate")
+	@Operation(summary = "Tạo lại mã mời", description = "Sinh mã mời mới cho gia đình và vô hiệu hóa mã cũ nếu tồn tại.")
 	public ResponseEntity<ApiResponse<FamilyInviteCodeDto>> regenerate(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {
@@ -43,6 +48,7 @@ public class FamilyInviteCodeController {
 	}
 
 	@PostMapping("/deactivate")
+	@Operation(summary = "Hủy kích hoạt mã mời", description = "Ngừng sử dụng mã mời hiện tại để ngăn thành viên mới tham gia.")
 	public ResponseEntity<ApiResponse<Void>> deactivate(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {
@@ -51,6 +57,7 @@ public class FamilyInviteCodeController {
 	}
 
 	@PostMapping("/activate")
+	@Operation(summary = "Kích hoạt lại mã mời", description = "Cho phép mã mời của gia đình hoạt động trở lại để tiếp nhận thành viên mới.")
 	public ResponseEntity<ApiResponse<Void>> activate(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId) {
@@ -59,6 +66,7 @@ public class FamilyInviteCodeController {
 	}
 
 	@GetMapping("/validate")
+	@Operation(summary = "Kiểm tra mã mời", description = "Xác minh mã mời do người dùng cung cấp có hợp lệ cho gia đình hay không.")
 	public ResponseEntity<ApiResponse<Boolean>> validate(
 			@PathVariable Integer familyId,
 			@RequestParam String code) {
