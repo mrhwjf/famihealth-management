@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.OAuth2Error;
@@ -36,7 +37,7 @@ public class SecurityConfig {
 		http
 				.csrf(csrf -> csrf.disable())
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/v1/oauth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
+						.requestMatchers("/api/v1/oauth/**", "/oauth/**", "/login/oauth/**").permitAll()
 						.anyRequest().permitAll())
 				.oauth2Login(oauth -> oauth
 						.successHandler(successHandler)
@@ -47,7 +48,8 @@ public class SecurityConfig {
 							ApiResponse<Void> body = ApiResponse.failure("Google login failed");
 							response.getWriter().write(objectMapper.writeValueAsString(body));
 							response.getWriter().flush();
-						}));
+						}))
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 		return http.build();
 	}
 

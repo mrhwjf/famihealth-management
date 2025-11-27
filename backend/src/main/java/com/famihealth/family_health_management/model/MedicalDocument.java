@@ -33,9 +33,6 @@ public class MedicalDocument {
 	@JoinColumn(name = "medical_record_id")
 	private MedicalRecord medicalRecord;
 
-	@Column(name = "file_type")
-	private String fileType;
-
 	@Column(name = "file_name")
 	private String fileName;
 

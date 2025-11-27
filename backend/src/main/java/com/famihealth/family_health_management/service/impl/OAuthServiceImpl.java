@@ -42,7 +42,6 @@ public class OAuthServiceImpl implements OAuthService {
 
 	private static final String GOOGLE_EMAIL_VERIFIED_CLAIM = "email_verified";
 	private static final String GOOGLE_NAME_CLAIM = "name";
-	private static final String GOOGLE_GIVEN_NAME_CLAIM = "given_name";
 	private static final String GOOGLE_PICTURE_CLAIM = "picture";
 
 	private static final Set<RoleType> ALLOWED_REGISTRATION_ROLES = EnumSet.of(RoleType.DOCTOR, RoleType.FAMILY);
@@ -65,8 +64,7 @@ public class OAuthServiceImpl implements OAuthService {
 			throw new BadRequestException("Google account does not expose an email address");
 		}
 		Boolean emailVerified = jwt.getClaimAsBoolean(GOOGLE_EMAIL_VERIFIED_CLAIM);
-		String name = firstNonBlank(jwt.getClaimAsString(GOOGLE_NAME_CLAIM),
-				jwt.getClaimAsString(GOOGLE_GIVEN_NAME_CLAIM));
+		String name = jwt.getClaimAsString(GOOGLE_NAME_CLAIM);
 		String picture = jwt.getClaimAsString(GOOGLE_PICTURE_CLAIM);
 		return processUser(googleUserId, email, emailVerified, name, picture, requestedRole);
 	}
@@ -80,7 +78,7 @@ public class OAuthServiceImpl implements OAuthService {
 			throw new BadRequestException("Google account does not expose an email address");
 		}
 		Boolean emailVerified = oidcUser.getEmailVerified();
-		String name = firstNonBlank(oidcUser.getFullName(), oidcUser.getGivenName());
+		String name = oidcUser.getFullName();
 		if (!StringUtils.hasText(name)) {
 			name = oidcUser.getPreferredUsername();
 		}
@@ -128,6 +126,7 @@ public class OAuthServiceImpl implements OAuthService {
 				.role(role)
 				.email(email)
 				.name(name)
+				.phone(null)
 				.profileUrl(picture)
 				.passwordHash(null)
 				.authProvider(AuthProvider.GOOGLE)
@@ -205,15 +204,5 @@ public class OAuthServiceImpl implements OAuthService {
 		} catch (IllegalArgumentException ex) {
 			throw new BadRequestException("Invalid role selection for Google login");
 		}
-	}
-
-	private String firstNonBlank(String primary, String fallback) {
-		if (StringUtils.hasText(primary)) {
-			return primary;
-		}
-		if (StringUtils.hasText(fallback)) {
-			return fallback;
-		}
-		return null;
 	}
 }

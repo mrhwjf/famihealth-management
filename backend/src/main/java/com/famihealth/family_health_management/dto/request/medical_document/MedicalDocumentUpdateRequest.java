@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 public class MedicalDocumentUpdateRequest {
 
 	@Size(max = 255)
-	private String fileType;
-
-	@Size(max = 255)
 	private String fileName;
 
 	@Size(max = 1024)

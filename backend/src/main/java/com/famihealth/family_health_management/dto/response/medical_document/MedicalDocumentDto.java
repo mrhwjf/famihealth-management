@@ -14,7 +14,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class MedicalDocumentDto {
 	private Integer id;
-	private String fileType;
 	private String fileName;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime uploadDate;

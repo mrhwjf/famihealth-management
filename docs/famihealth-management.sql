@@ -125,7 +125,6 @@ CREATE TABLE `medical_records` (
 CREATE TABLE `medical_documents` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `medical_record_id` int,
-  `file_type` varchar(255),
   `file_name` varchar(255),
   `upload_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `file_url` varchar(255)
