@@ -6,11 +6,16 @@ import org.springframework.transaction.annotation.Transactional;
 import com.famihealth.family_health_management.dto.request.user.doctor.DoctorCreateRequest;
 import com.famihealth.family_health_management.dto.request.user.doctor.DoctorUpdateRequest;
 import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
+import com.famihealth.family_health_management.exception.ResourceNotFoundException;
 import com.famihealth.family_health_management.mapper.DoctorProfileMapper;
 import com.famihealth.family_health_management.mapper.UserMapper;
 import com.famihealth.family_health_management.model.DoctorProfile;
+import com.famihealth.family_health_management.model.Facility;
+import com.famihealth.family_health_management.model.Specialization;
 import com.famihealth.family_health_management.model.User;
+import com.famihealth.family_health_management.repository.FacilityRepository;
 import com.famihealth.family_health_management.repository.RoleRepository;
+import com.famihealth.family_health_management.repository.SpecializationRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.DoctorService;
 
@@ -23,6 +28,8 @@ public class DoctorServiceImpl implements DoctorService {
 
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
+	private final FacilityRepository facilityRepository;
+	private final SpecializationRepository specializationRepository;
 	private final UserMapper userMapper;
 	private final DoctorProfileMapper doctorProfileMapper;
 
@@ -40,6 +47,8 @@ public class DoctorServiceImpl implements DoctorService {
 		// Handle doctor profile
 		DoctorProfile doctorProfile = doctorProfileMapper.toEntity(req.getDoctorProfile());
 		doctorProfile.setDoctor(user);
+		doctorProfile.setFacility(resolveFacility(req.getDoctorProfile().getFacilityId()));
+		doctorProfile.setSpecialization(resolveSpecialization(req.getDoctorProfile().getSpecializationId()));
 		user.setDoctorProfile(doctorProfile);
 		user = userRepository.save(user);
 		return userMapper.toDetailDto(user);
@@ -67,8 +76,27 @@ public class DoctorServiceImpl implements DoctorService {
 			user.setDoctorProfile(doctorProfile);
 		}
 		doctorProfileMapper.updateEntityFromDto(req.getDoctorProfile(), doctorProfile);
+		doctorProfile.setFacility(resolveFacility(req.getDoctorProfile().getFacilityId()));
+		doctorProfile.setSpecialization(resolveSpecialization(req.getDoctorProfile().getSpecializationId()));
 
 		user = userRepository.save(user);
 		return userMapper.toDetailDto(user);
+	}
+
+	private Facility resolveFacility(Integer facilityId) {
+		if (facilityId == null) {
+			return null;
+		}
+		return facilityRepository.findById(facilityId)
+				.orElseThrow(() -> new ResourceNotFoundException("Facility not found with id=" + facilityId));
+	}
+
+	private Specialization resolveSpecialization(Integer specializationId) {
+		if (specializationId == null) {
+			return null;
+		}
+		return specializationRepository.findById(specializationId)
+				.orElseThrow(
+						() -> new ResourceNotFoundException("Specialization not found with id=" + specializationId));
 	}
 }

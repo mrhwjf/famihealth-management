@@ -33,7 +33,7 @@ public class AppointmentCreateRequest {
 
 	@NotBlank
 	@Size(max = 255)
-	private String location;
+	private String reason;
 
 	@Size(max = 4000)
 	private String notes;

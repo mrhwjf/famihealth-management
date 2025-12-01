@@ -1,5 +1,8 @@
 package com.famihealth.family_health_management.dto.response.doctor_profile;
 
+import com.famihealth.family_health_management.dto.response.faclitiy.FacilityDto;
+import com.famihealth.family_health_management.dto.response.specialization.SpecializationDto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,4 +18,6 @@ public class DoctorProfileSummaryDto {
 	private String licenseNumber;
 	private String certificateFileUrl;
 	private Boolean verified;
+	private FacilityDto facility;
+	private SpecializationDto specialization;
 }

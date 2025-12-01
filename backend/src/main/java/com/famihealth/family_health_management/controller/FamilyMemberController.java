@@ -19,6 +19,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberLinkUserRequest;
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.service.FamilyService;
 
@@ -130,5 +131,25 @@ public class FamilyMemberController {
 			@PathVariable Integer familyId) {
 		List<FamilyMemberSummaryDto> members = familyService.getAllMembersInFamily(sessionId, familyId);
 		return ResponseEntity.ok(ApiResponse.success("OK", members));
+	}
+
+	@GetMapping("/form-data")
+	@Operation(summary = "Dữ liệu biểu mẫu thành viên gia đình", description = "Lấy dữ liệu cần thiết để điền biểu mẫu khi tạo hoặc chỉnh sửa thành viên gia đình.")
+	public ResponseEntity<ApiResponse<FamilyMemberFormDto>> getMemberFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer familyId,
+			@PathVariable Integer memberId) {
+		FamilyMemberFormDto formData = familyService.getMemberEditFormData(sessionId, familyId, memberId);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
+	}
+
+	@GetMapping("/{memberId}/form-data")
+	@Operation(summary = "Dữ liệu biểu mẫu chỉnh sửa thành viên gia đình", description = "Lấy dữ liệu cần thiết để điền biểu mẫu khi tạo hoặc chỉnh sửa thành viên gia đình.")
+	public ResponseEntity<ApiResponse<FamilyMemberFormDto>> getMemberEditFormData(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer familyId,
+			@PathVariable Integer memberId) {
+		FamilyMemberFormDto formData = familyService.getMemberEditFormData(sessionId, familyId, memberId);
+		return ResponseEntity.ok(ApiResponse.success("OK", formData));
 	}
 }

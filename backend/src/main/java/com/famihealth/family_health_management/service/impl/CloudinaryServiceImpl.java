@@ -58,7 +58,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 	public FileUploadResponseDto uploadUserProfilePicture(String sessionId, MultipartFile file) {
 		SessionData session = requireSession(sessionId);
 		User user = requireUser(session.getUserId());
-		requireNonOauth(user);
 		requireFile(file);
 		ensureImage(file, "Only image files are allowed for profile pictures");
 		String publicId = FileTypeUtils.buildPublicId(USER_PROFILE_FOLDER, user.getId(), file,
@@ -248,12 +247,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 	private void ensurePdf(MultipartFile file, String message) {
 		if (!FileTypeUtils.isPdf(file)) {
 			throw new BadRequestException(message);
-		}
-	}
-
-	private void requireNonOauth(User user) {
-		if (user.getAuthProvider() != null) {
-			throw new BadRequestException("OAuth2 users cannot change profile picture");
 		}
 	}
 

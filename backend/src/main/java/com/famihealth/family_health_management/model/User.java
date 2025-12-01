@@ -12,9 +12,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Table;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -68,12 +72,9 @@ public class User {
 	@Builder.Default
 	private Boolean locked = false;
 
-	@Column(name = "auth_provider")
-	@Enumerated(EnumType.STRING)
-	private AuthProvider authProvider;
-
-	@Column(name = "provider_id")
-	private String providerId;
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@Builder.Default
+	private Set<FamilyAccess> familyAccesses = new HashSet<>();
 
 	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
 	private DoctorProfile doctorProfile;

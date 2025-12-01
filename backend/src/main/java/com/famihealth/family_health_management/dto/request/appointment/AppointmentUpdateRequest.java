@@ -23,7 +23,7 @@ public class AppointmentUpdateRequest {
 	private LocalDateTime appointmentDatetime;
 
 	@Size(max = 255)
-	private String location;
+	private String reason;
 
 	private AppointmentStatus status;
 

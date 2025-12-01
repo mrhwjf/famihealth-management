@@ -13,6 +13,12 @@ import lombok.NoArgsConstructor;
 public class DoctorProfileUpdateRequest {
 
 	@NotNull
+	private Integer facilityId;
+
+	@NotNull
+	private Integer specializationId;
+
+	@NotNull
 	private String licenseNumber;
 
 	@NotNull

@@ -13,10 +13,14 @@ import com.famihealth.family_health_management.dto.request.family.FamilyFilterRe
 import com.famihealth.family_health_management.dto.request.family.FamilyUpdateRequest;
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberCreateRequest;
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberUpdateRequest;
+import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
+import com.famihealth.family_health_management.enums.BloodType;
+import com.famihealth.family_health_management.enums.Gender;
 import com.famihealth.family_health_management.dto.response.auth.SessionData;
 import com.famihealth.family_health_management.exception.BadRequestException;
 import com.famihealth.family_health_management.exception.ForbiddenException;
@@ -314,6 +318,37 @@ public class FamilyServiceImpl implements FamilyService {
 			throw new BadRequestException("Doctor does not have access to this member");
 		}
 		memberAccessRepository.deleteByMemberIdAndDoctorId(memberId, doctorId);
+	}
+
+	@Override
+	public FamilyMemberFormDto getMemberFormData() {
+		List<RelationshipsToCreator> relationships = relationshipsToCreatorRepository.findAll();
+		List<IdNamePair> relationshipPairs = relationships.stream()
+				.map(r -> new IdNamePair(r.getId(), r.getRelationshipName()))
+				.toList();
+		List<BloodType> bloodTypes = List.of(BloodType.values());
+		List<Gender> genders = List.of(Gender.values());
+		return FamilyMemberFormDto.builder()
+				.relationshipsToCreator(relationshipPairs)
+				.bloodTypes(bloodTypes)
+				.genders(genders)
+				.build();
+	}
+
+	@Override
+	public FamilyMemberFormDto getMemberEditFormData(String sessionId, Integer familyId, Integer memberId) {
+		SessionData session = requireSession(sessionId);
+		Family family = requireFamily(familyId);
+		ensureHasAccess(session.getUserId(), family.getId());
+		FamilyMember member = requireMember(memberId);
+		if (!member.getFamily().getId().equals(familyId)) {
+			throw new BadRequestException("Family member does not belong to the provided family");
+		}
+
+		FamilyMemberSummaryDto memberDto = familyMemberMapper.toSummaryDto(member);
+		FamilyMemberFormDto formDto = getMemberFormData();
+		formDto.setFamilyMember(memberDto);
+		return formDto;
 	}
 
 	private FamilyAccess familyAccessBuilder(Integer familyId, Integer userId, Boolean isCreator, Family family,

@@ -36,9 +36,9 @@ public class AppointmentSpecs {
 								cb.lower(root.get(Appointment_.patient).get(FamilyMember_.name)),
 								pattern));
 						break;
-					case "location":
+					case "reason":
 						predicates.add(cb.like(
-								cb.lower(root.get(Appointment_.location)),
+								cb.lower(root.get(Appointment_.reason)),
 								pattern));
 						break;
 					case "notes":

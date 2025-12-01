@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -24,6 +25,14 @@ public class DoctorProfile {
 
 	@Id
 	private Integer doctorId;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "facility_id")
+	private Facility facility;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "specialization_id")
+	private Specialization specialization;
 
 	@Column(name = "license_number")
 	private String licenseNumber;

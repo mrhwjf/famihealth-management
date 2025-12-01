@@ -9,20 +9,26 @@ import com.famihealth.family_health_management.dto.request.doctor_profile.Doctor
 import com.famihealth.family_health_management.dto.response.doctor_profile.DoctorProfileSummaryDto;
 import com.famihealth.family_health_management.model.DoctorProfile;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { FacilityMapper.class, SpecializationMapper.class })
 public interface DoctorProfileMapper {
 	@Mapping(target = "name", source = "doctor.name")
 	DoctorProfileSummaryDto toSummaryDto(DoctorProfile entity);
 
 	@Mapping(target = "doctor", ignore = true)
 	@Mapping(target = "doctorId", ignore = true)
+	@Mapping(target = "facility", ignore = true)
+	@Mapping(target = "specialization", ignore = true)
 	DoctorProfile toEntity(DoctorProfileCreateRequest req);
 
 	@Mapping(target = "doctor", ignore = true)
 	@Mapping(target = "doctorId", ignore = true)
+	@Mapping(target = "facility", ignore = true)
+	@Mapping(target = "specialization", ignore = true)
 	DoctorProfile toEntity(DoctorProfileUpdateRequest req);
 
 	@Mapping(target = "doctor", ignore = true)
 	@Mapping(target = "doctorId", ignore = true)
+	@Mapping(target = "facility", ignore = true)
+	@Mapping(target = "specialization", ignore = true)
 	void updateEntityFromDto(DoctorProfileUpdateRequest dto, @MappingTarget DoctorProfile entity);
 }

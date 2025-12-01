@@ -25,9 +25,13 @@ import com.famihealth.family_health_management.exception.ResourceNotFoundExcepti
 import com.famihealth.family_health_management.mapper.DoctorProfileMapper;
 import com.famihealth.family_health_management.mapper.UserMapper;
 import com.famihealth.family_health_management.model.DoctorProfile;
+import com.famihealth.family_health_management.model.Facility;
 import com.famihealth.family_health_management.model.Role;
+import com.famihealth.family_health_management.model.Specialization;
 import com.famihealth.family_health_management.model.User;
+import com.famihealth.family_health_management.repository.FacilityRepository;
 import com.famihealth.family_health_management.repository.RoleRepository;
+import com.famihealth.family_health_management.repository.SpecializationRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.AuthService;
 import com.famihealth.family_health_management.service.EmailService;
@@ -52,6 +56,8 @@ public class AuthServiceImpl implements AuthService {
 
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
+	private final FacilityRepository facilityRepository;
+	private final SpecializationRepository specializationRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final SessionService sessionService;
 	private final UserMapper userMapper;
@@ -132,6 +138,8 @@ public class AuthServiceImpl implements AuthService {
 		if (profileReq != null) {
 			DoctorProfile profile = doctorProfileMapper.toEntity(profileReq);
 			profile.setDoctor(user);
+			profile.setFacility(resolveFacility(profileReq.getFacilityId()));
+			profile.setSpecialization(resolveSpecialization(profileReq.getSpecializationId()));
 			user.setDoctorProfile(profile);
 		}
 
@@ -188,6 +196,23 @@ public class AuthServiceImpl implements AuthService {
 		user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
 		userRepository.save(user);
 		redisTemplate.delete(key);
+	}
+
+	private Facility resolveFacility(Integer facilityId) {
+		if (facilityId == null) {
+			return null;
+		}
+		return facilityRepository.findById(facilityId)
+				.orElseThrow(() -> new ResourceNotFoundException("Facility not found with id=" + facilityId));
+	}
+
+	private Specialization resolveSpecialization(Integer specializationId) {
+		if (specializationId == null) {
+			return null;
+		}
+		return specializationRepository.findById(specializationId)
+				.orElseThrow(
+						() -> new ResourceNotFoundException("Specialization not found with id=" + specializationId));
 	}
 
 	private User buildUserFromRequest(RegisterRequest req, String roleName) {

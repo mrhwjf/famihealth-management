@@ -311,8 +311,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 		if (request.getAppointmentDatetime() != null) {
 			appointment.setAppointmentDatetime(request.getAppointmentDatetime());
 		}
-		if (request.getLocation() != null) {
-			appointment.setLocation(request.getLocation());
+		if (request.getReason() != null) {
+			appointment.setReason(request.getReason());
 		}
 		if (request.getNotes() != null) {
 			appointment.setNotes(request.getNotes());
@@ -329,8 +329,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 		if (request.getAppointmentDatetime() != null) {
 			appointment.setAppointmentDatetime(request.getAppointmentDatetime());
 		}
-		if (request.getLocation() != null) {
-			appointment.setLocation(request.getLocation());
+		if (request.getReason() != null) {
+			appointment.setReason(request.getReason());
 		}
 		if (request.getNotes() != null) {
 			appointment.setNotes(request.getNotes());

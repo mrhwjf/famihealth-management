@@ -46,8 +46,8 @@ public class Appointment {
 	@Column(name = "appointment_datetime")
 	private LocalDateTime appointmentDatetime;
 
-	@Column(name = "location")
-	private String location;
+	@Column(name = "reason")
+	private String reason;
 
 	@Column(name = "status")
 	@Enumerated(EnumType.STRING)

@@ -21,7 +21,7 @@ public class AppointmentDto {
 	private Integer doctorId;
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
 	private LocalDateTime appointmentDatetime;
-	private String location;
+	private String reason;
 	private String status;
 	private String notes;
 }

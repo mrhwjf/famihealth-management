@@ -11,6 +11,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberUpdateRequest;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
 
@@ -52,6 +53,10 @@ public interface FamilyService {
 			FamilyMemberUpdateRequest req);
 
 	List<FamilyMemberSummaryDto> getAllMembersInFamily(String sessionId, Integer familyId);
+
+	FamilyMemberFormDto getMemberFormData();
+
+	FamilyMemberFormDto getMemberEditFormData(String sessionId, Integer familyId, Integer memberId);
 
 	// =========================
 	// Family Access Control
