@@ -19,20 +19,25 @@ const BaseMenu = ({ isMobile, items, collapsed, onClose }) => {
 		return map;
 	}, [items]);
 
-	// Find currently selected menu key based on location
+	// Find currently selected menu key based on location (prefer the deepest/longest path match)
 	const selectedKeys = useMemo(() => {
-		const findKeyByPath = (items, path) => {
+		const findBestMatch = (items, path) => {
+			let best = { key: null, length: -1 };
 			for (const item of items) {
-				if (item.path && path.includes(item.path)) return item.key;
+				// Prefer prefix match to avoid false positives
+				if (item.path && (path === item.path || path.startsWith(item.path))) {
+					const len = item.path.length;
+					if (len > best.length) best = { key: item.key, length: len };
+				}
 				if (item.children) {
-					const childKey = findKeyByPath(item.children, path);
-					if (childKey) return childKey;
+					const childBest = findBestMatch(item.children, path);
+					if (childBest.key && childBest.length > best.length) best = childBest;
 				}
 			}
-			return null;
+			return best;
 		};
-		const key = findKeyByPath(items, location.pathname);
-		return key ? [key] : [];
+		const best = findBestMatch(items, location.pathname);
+		return best.key ? [best.key] : [];
 	}, [items, location.pathname]);
 
 	// Handle menu click using key-to-path map

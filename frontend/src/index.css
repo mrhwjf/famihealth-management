@@ -44,3 +44,22 @@ canvas {
 	background: var(--celadon);
 	color: var(--dark-green);
 }
+
+/* Force pagination active item to black text/border */
+.ant-pagination .ant-pagination-item-active {
+	border-color: #000000;
+}
+.ant-pagination .ant-pagination-item-active a {
+	color: #000000;
+}
+.ant-pagination .ant-pagination-item-active:hover a {
+	color: #000000;
+}
+
+/* Tabs: make active tab text black and ink bar orange */
+.ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+	color: #000000 !important;
+}
+.ant-tabs .ant-tabs-ink-bar {
+	background: #f59e0b; /* orange-500 */
+}

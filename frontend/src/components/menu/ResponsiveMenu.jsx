@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Layout, Drawer, Button } from 'antd';
+import { Layout, Drawer, Button, Divider } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import BaseMenu from './BaseMenu';
 import useIsMobile from '../../hooks/useIsMobile';
+import LogoutButton from './LogoutButton';
 
 
 const { Sider } = Layout;
@@ -37,13 +38,21 @@ const ResponsiveMenu = ({ items }) => {
 					open={drawerVisible}
 					styles={{ padding: 0 }}
 				>
-					<BaseMenu
-						items={items}
-						isMobile
-						onClose={closeDrawer}
-						collapsed={false} // drawer never collapses
-						toggleCollapsed={() => { }}
-					/>
+					<div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+						<div style={{ flex: 1, overflowY: 'auto' }}>
+							<BaseMenu
+								items={items}
+								isMobile
+								onClose={closeDrawer}
+								collapsed={false}
+								toggleCollapsed={() => { }}
+							/>
+						</div>
+						<Divider style={{ margin: '12px 0' }} />
+						<div style={{ padding: 16 }}>
+							<LogoutButton collapsed={false} onAfterLogout={closeDrawer} />
+						</div>
+					</div>
 				</Drawer>
 			</>
 		);
@@ -58,15 +67,22 @@ const ResponsiveMenu = ({ items }) => {
 			width={256}
 			style={{
 				minHeight: '100vh',
-				backgroundColor: 'white'
+				backgroundColor: 'white',
+				display: 'flex',
+				flexDirection: 'column'
 			}}
 		>
-			<BaseMenu
-				items={items}
-				isMobile={false}
-				collapsed={collapsed}
-				toggleCollapsed={toggleCollapsed}
-			/>
+			<div style={{ flex: 1, overflowY: 'auto' }}>
+				<BaseMenu
+					items={items}
+					isMobile={false}
+					collapsed={collapsed}
+					toggleCollapsed={toggleCollapsed}
+				/>
+			</div>
+			<div style={{ padding: collapsed ? 8 : 16 }}>
+				<LogoutButton collapsed={collapsed} />
+			</div>
 		</Sider>
 	);
 };
