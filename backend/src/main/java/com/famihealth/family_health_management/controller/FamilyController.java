@@ -24,6 +24,7 @@ import com.famihealth.family_health_management.dto.request.family.FamilyUpdateRe
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
 import com.famihealth.family_health_management.service.FamilyService;
 
@@ -68,6 +69,14 @@ public class FamilyController {
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer id) {
 		FamilyDto result = familyService.getById(sessionId, id);
+		return ResponseEntity.ok(ApiResponse.success("OK", result));
+	}
+
+	@GetMapping("/me")
+	@Operation(summary = "Xem chi tiết gia đình của tôi", description = "Lấy thông tin hồ sơ của gia đình hiện tại của người dùng dựa trên phiên đã xác thực.")
+	public ResponseEntity<ApiResponse<FamilyDto>> getMyFamily(
+			@RequestHeader(name = SESSION_HEADER) String sessionId) {
+		FamilyDto result = familyService.getMyFamily(sessionId);
 		return ResponseEntity.ok(ApiResponse.success("OK", result));
 	}
 
@@ -117,5 +126,13 @@ public class FamilyController {
 			@PathVariable Integer familyId) {
 		List<MemberAccessDto> accessList = familyService.getMembersAccessList(sessionId, familyId);
 		return ResponseEntity.ok(ApiResponse.success("OK", accessList));
+	}
+
+	@GetMapping("/me/members")
+	@Operation(summary = "Danh sách thành viên trong gia đình của tôi", description = "Liệt kê tất cả các thành viên trong gia đình hiện tại của người dùng dựa trên phiên đã xác thực.")
+	public ResponseEntity<ApiResponse<List<FamilyMemberSummaryDto>>> getAllMembersInMyFamily(
+			@RequestHeader(name = SESSION_HEADER) String sessionId) {
+		List<FamilyMemberSummaryDto> members = familyService.getAllMembersInMyFamily(sessionId);
+		return ResponseEntity.ok(ApiResponse.success("OK", members));
 	}
 }

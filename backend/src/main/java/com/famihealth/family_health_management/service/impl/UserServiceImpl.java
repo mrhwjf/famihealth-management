@@ -1,8 +1,6 @@
 package com.famihealth.family_health_management.service.impl;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,9 +17,7 @@ import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
 import com.famihealth.family_health_management.dto.response.user.UserFormDto;
 import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
 import com.famihealth.family_health_management.mapper.UserMapper;
-import com.famihealth.family_health_management.model.Facility;
 import com.famihealth.family_health_management.model.Role;
-import com.famihealth.family_health_management.model.Specialization;
 import com.famihealth.family_health_management.model.User;
 import com.famihealth.family_health_management.repository.FacilityRepository;
 import com.famihealth.family_health_management.repository.RoleRepository;

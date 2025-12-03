@@ -1,7 +1,6 @@
 package com.famihealth.family_health_management.dto.response.user;
 
 import java.util.List;
-import java.util.Set;
 
 import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;

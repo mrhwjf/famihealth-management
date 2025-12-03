@@ -14,13 +14,16 @@ import com.famihealth.family_health_management.dto.response.family_member.Family
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.enums.BloodType;
 import com.famihealth.family_health_management.enums.Gender;
+import com.famihealth.family_health_management.model.Allergy;
 import com.famihealth.family_health_management.model.FamilyMember;
+import com.famihealth.family_health_management.model.VaccinationRecord;
 
-@Mapper(componentModel = "spring", uses = { UserMapper.class })
+@Mapper(componentModel = "spring", uses = { UserMapper.class, AllergyMapper.class, VaccinationRecordMapper.class })
 public interface FamilyMemberMapper {
 
-	@Mapping(target = "relationshipToCreator", source = "relationshipToCreator.relationshipName")
-	FamilyMemberDetailDto toDetailDto(FamilyMember entity);
+	@Mapping(target = "relationshipToCreator", source = "entity.relationshipToCreator.relationshipName")
+	FamilyMemberDetailDto toDetailDto(FamilyMember entity, List<Allergy> allergies,
+			List<VaccinationRecord> vaccinationRecords);
 
 	@Mapping(target = "relationshipToCreator", source = "relationshipToCreator.relationshipName")
 	FamilyMemberSummaryDto toSummaryDto(FamilyMember entity);

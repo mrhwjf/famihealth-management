@@ -1,7 +1,7 @@
 package com.famihealth.family_health_management.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -44,5 +44,5 @@ public class Family {
 	private String phone;
 
 	@OneToMany(mappedBy = "family", cascade = CascadeType.REMOVE, orphanRemoval = true, fetch = FetchType.LAZY)
-	private Set<FamilyMember> members = new HashSet<>();
+	private List<FamilyMember> members = new ArrayList<>();
 }

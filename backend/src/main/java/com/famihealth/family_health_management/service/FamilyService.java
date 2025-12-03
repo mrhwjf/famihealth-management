@@ -11,6 +11,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberUpdateRequest;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberDetailDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
@@ -30,6 +31,8 @@ public interface FamilyService {
 
 	FamilyDto getById(String sessionId, Integer id);
 
+	FamilyDto getMyFamily(String sessionId);
+
 	void deleteById(String sessionId, Integer id);
 
 	/**
@@ -47,12 +50,14 @@ public interface FamilyService {
 
 	void deleteMemberById(String sessionId, Integer familyId, Integer memberId);
 
-	FamilyMemberSummaryDto getMemberById(String sessionId, Integer familyId, Integer memberId);
+	FamilyMemberDetailDto getMemberById(String sessionId, Integer familyId, Integer memberId);
 
 	FamilyMemberSummaryDto updateMemberById(String sessionId, Integer familyId, Integer memberId,
 			FamilyMemberUpdateRequest req);
 
 	List<FamilyMemberSummaryDto> getAllMembersInFamily(String sessionId, Integer familyId);
+
+	List<FamilyMemberSummaryDto> getAllMembersInMyFamily(String sessionId);
 
 	FamilyMemberFormDto getMemberFormData();
 

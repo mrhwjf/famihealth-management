@@ -19,6 +19,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberLinkUserRequest;
 import com.famihealth.family_health_management.dto.request.family_member.FamilyMemberUpdateRequest;
 import com.famihealth.family_health_management.dto.response.api.ApiResponse;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberDetailDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.service.FamilyService;
@@ -72,11 +73,11 @@ public class FamilyMemberController {
 
 	@GetMapping("{memberId}")
 	@Operation(summary = "Xem chi tiết thành viên", description = "Truy xuất thông tin chi tiết của một thành viên trong gia đình.")
-	public ResponseEntity<ApiResponse<FamilyMemberSummaryDto>> getMember(
+	public ResponseEntity<ApiResponse<FamilyMemberDetailDto>> getMember(
 			@RequestHeader(name = SESSION_HEADER) String sessionId,
 			@PathVariable Integer familyId,
 			@PathVariable Integer memberId) {
-		FamilyMemberSummaryDto member = familyService.getMemberById(sessionId, familyId, memberId);
+		FamilyMemberDetailDto member = familyService.getMemberById(sessionId, familyId, memberId);
 		return ResponseEntity.ok(ApiResponse.success("OK", member));
 	}
 

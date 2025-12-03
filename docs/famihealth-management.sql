@@ -394,8 +394,36 @@ INSERT INTO family_access (family_id, user_id, family_creator) VALUES
 -- FAMILY_MEMBERS
 -- =========================
 INSERT INTO family_members (family_id, user_id, relationship_to_creator_id, name, dob, gender, blood_type, phone, profile_url) VALUES
-(1, 3, null, 'Nguyễn Văn A', '1980-01-01', 'MALE', 'A+', '0334455667', 'http://example.com/profile/nguyenvana')
+(1, 3, null, 'Nguyễn Văn A', '1980-01-01', 'MALE', 'A+', '0334455667', 'http://example.com/profile/nguyenvana'),
 (1, 4, 4, 'Nguyễn Văn B', '2010-05-15', 'MALE', 'O+', '0445566778', 'http://example.com/profile/nguyenvanb');
+
+-- =========================
+-- VACCINATION_RECORDS
+-- =========================
+INSERT INTO vaccination_records (family_member_id, vacc_id, administered_date, next_due_date) VALUES
+(1, 1, '2020-01-01', '2021-01-01'), -- Nguyễn Văn A
+(2, 2, '2015-06-01', '2016-06-01'); -- Nguyễn Văn B
+
+-- =========================
+-- ALLERGIES
+-- =========================
+INSERT INTO allergies (family_member_id, allergens, notes) VALUES
+(1, 'Phấn hoa', 'Nguyễn Văn A bị dị ứng phấn hoa vào mùa xuân'),
+(2, 'Sữa', 'Nguyễn Văn B có tiền sử dị ứng sữa');
+
+-- =========================
+-- MEDICAL_RECORDS
+-- =========================
+INSERT INTO medical_records (family_member_id, doctor_id, facility_id, date, diagnosis, treatment, follow_up_date) VALUES
+(1, 2, 1, '2023-01-15', 'Cảm cúm', 'Nghỉ ngơi và uống thuốc hạ sốt', '2023-01-22'), -- Nguyễn Văn A
+(2, 2, 1, '2023-02-10', 'Viêm họng', 'Uống kháng sinh và súc miệng nước muối', '2023-02-17'); -- Nguyễn Văn B
+
+-- =========================
+-- MEDICAL_DOCUMENTS
+-- =========================
+INSERT INTO medical_documents (medical_record_id, file_name, upload_date, file_url) VALUES
+(1, 'Cảm cúm - Nguyễn Văn A.pdf', '2023-01-15 10:00:00', 'http://example.com/documents/cam-cum-nguyenvana.pdf'),
+(2, 'Viêm họng - Nguyễn Văn B.pdf', '2023-02-10 11:00:00', 'http://example.com/documents/viem-hong-nguyenvanb.pdf');
 
 
 SET FOREIGN_KEY_CHECKS = 1;

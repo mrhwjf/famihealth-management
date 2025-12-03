@@ -16,6 +16,7 @@ import com.famihealth.family_health_management.dto.request.family_member.FamilyM
 import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.family.FamilyDto;
+import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberDetailDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberFormDto;
 import com.famihealth.family_health_management.dto.response.family_member.FamilyMemberSummaryDto;
 import com.famihealth.family_health_management.dto.response.member_access.MemberAccessDto;
@@ -28,18 +29,22 @@ import com.famihealth.family_health_management.exception.NotFoundException;
 import com.famihealth.family_health_management.mapper.FamilyMapper;
 import com.famihealth.family_health_management.mapper.FamilyMemberMapper;
 import com.famihealth.family_health_management.mapper.MemberAccessMapper;
+import com.famihealth.family_health_management.model.Allergy;
 import com.famihealth.family_health_management.model.Family;
 import com.famihealth.family_health_management.model.FamilyAccess;
 import com.famihealth.family_health_management.model.FamilyMember;
 import com.famihealth.family_health_management.model.MemberAccess;
 import com.famihealth.family_health_management.model.RelationshipsToCreator;
 import com.famihealth.family_health_management.model.User;
+import com.famihealth.family_health_management.model.VaccinationRecord;
+import com.famihealth.family_health_management.repository.AllergyRepository;
 import com.famihealth.family_health_management.repository.FamilyAccessRepository;
 import com.famihealth.family_health_management.repository.FamilyMemberRepository;
 import com.famihealth.family_health_management.repository.FamilyRepository;
 import com.famihealth.family_health_management.repository.MemberAccessRepository;
 import com.famihealth.family_health_management.repository.RelationshipsToCreatorRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
+import com.famihealth.family_health_management.repository.VaccinationRecordRepository;
 import com.famihealth.family_health_management.service.FamilyInviteCodeService;
 import com.famihealth.family_health_management.service.FamilyService;
 import com.famihealth.family_health_management.service.SessionService;
@@ -62,6 +67,8 @@ public class FamilyServiceImpl implements FamilyService {
 	private final MemberAccessRepository memberAccessRepository;
 	private final RelationshipsToCreatorRepository relationshipsToCreatorRepository;
 	private final UserRepository userRepository;
+	private final AllergyRepository allergyRepository;
+	private final VaccinationRecordRepository vaccinationRecordRepository;
 	private final FamilyInviteCodeService familyInviteCodeService;
 	private final SessionService sessionService;
 	private final FamilyMapper familyMapper;
@@ -110,6 +117,21 @@ public class FamilyServiceImpl implements FamilyService {
 		SessionData session = requireSession(sessionId);
 		Family family = requireFamily(id);
 		ensureHasAccess(session.getUserId(), family.getId());
+		return familyMapper.toDto(family);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public FamilyDto getMyFamily(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		Integer requesterId = session.getUserId();
+
+		List<FamilyAccess> accesses = familyAccessRepository.findByUserId(requesterId);
+		if (accesses.isEmpty()) {
+			throw new NotFoundException("User does not have access to any family");
+		}
+
+		Family family = accesses.get(0).getFamily();
 		return familyMapper.toDto(family);
 	}
 
@@ -428,7 +450,7 @@ public class FamilyServiceImpl implements FamilyService {
 	}
 
 	@Override
-	public FamilyMemberSummaryDto getMemberById(String sessionId, Integer familyId, Integer memberId) {
+	public FamilyMemberDetailDto getMemberById(String sessionId, Integer familyId, Integer memberId) {
 		SessionData session = requireSession(sessionId);
 		Family family = requireFamily(familyId);
 		ensureHasAccess(session.getUserId(), family.getId());
@@ -436,7 +458,9 @@ public class FamilyServiceImpl implements FamilyService {
 		if (!member.getFamily().getId().equals(familyId)) {
 			throw new BadRequestException("Family member does not belong to the provided family");
 		}
-		return familyMemberMapper.toSummaryDto(member);
+		List<Allergy> allergies = allergyRepository.findByFamilyMember_Id(memberId);
+		List<VaccinationRecord> vaccinationRecords = vaccinationRecordRepository.findByFamilyMember_Id(memberId);
+		return familyMemberMapper.toDetailDto(member, allergies, vaccinationRecords);
 	}
 
 	@Override
@@ -455,5 +479,25 @@ public class FamilyServiceImpl implements FamilyService {
 				})
 				.toList();
 		return accessDtos;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<FamilyMemberSummaryDto> getAllMembersInMyFamily(String sessionId) {
+		SessionData session = requireSession(sessionId);
+		Integer requesterId = session.getUserId();
+
+		List<FamilyAccess> accesses = familyAccessRepository.findByUserId(requesterId);
+		if (accesses.isEmpty()) {
+			throw new NotFoundException("User does not have access to any family");
+		}
+
+		Family family = accesses.get(0).getFamily();
+
+		List<FamilyMember> members = familyMemberRepository.findByFamily_Id(family.getId());
+		List<FamilyMemberSummaryDto> memberDtos = members.stream()
+				.map(familyMemberMapper::toSummaryDto)
+				.toList();
+		return memberDtos;
 	}
 }
