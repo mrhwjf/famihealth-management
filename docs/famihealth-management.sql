@@ -377,6 +377,26 @@ INSERT INTO specializations (name, description) VALUES
 ('Truyền nhiễm', 'Điều trị bệnh do vi khuẩn, virus, ký sinh trùng và nấm'),
 ('Phục hồi chức năng', 'Vật lý trị liệu và phục hồi sau chấn thương hoặc phẫu thuật');
 
+-- =========================
+-- FAMILIES
+-- =========================
+INSERT INTO families (creator_id, name, address, phone) VALUES
+(3, 'Gia đình Nguyễn Văn A', '123 Đường Lê Lợi, Quận 1, TP.HCM', '0334455667');
+
+-- =========================
+-- FAMILY_ACCESS
+-- =========================
+INSERT INTO family_access (family_id, user_id, family_creator) VALUES
+(1, 3, true),  -- Creator access
+(1, 2, false); -- Doctor access
+
+-- =========================
+-- FAMILY_MEMBERS
+-- =========================
+INSERT INTO family_members (family_id, user_id, relationship_to_creator_id, name, dob, gender, blood_type, phone, profile_url) VALUES
+(1, 3, null, 'Nguyễn Văn A', '1980-01-01', 'MALE', 'A+', '0334455667', 'http://example.com/profile/nguyenvana')
+(1, 4, 4, 'Nguyễn Văn B', '2010-05-15', 'MALE', 'O+', '0445566778', 'http://example.com/profile/nguyenvanb');
+
 
 SET FOREIGN_KEY_CHECKS = 1;
 

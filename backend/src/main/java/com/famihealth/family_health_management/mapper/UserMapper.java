@@ -1,6 +1,6 @@
 package com.famihealth.family_health_management.mapper;
 
-import java.util.Set;
+import java.util.List;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,10 +8,10 @@ import org.mapstruct.MappingTarget;
 
 import com.famihealth.family_health_management.dto.request.user.UserCreateRequest;
 import com.famihealth.family_health_management.dto.request.user.UserUpdateRequest;
+import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
 import com.famihealth.family_health_management.dto.response.user.UserFormDto;
 import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
-import com.famihealth.family_health_management.model.Role;
 import com.famihealth.family_health_management.model.User;
 
 @Mapper(componentModel = "spring", uses = { RoleMapper.class, DoctorProfileMapper.class })
@@ -22,7 +22,8 @@ public interface UserMapper {
 	UserSummaryDto toSummaryDto(User entity);
 
 	@Mapping(target = "userDetails", source = "entity")
-	UserFormDto toFormDto(User entity, Set<Role> roles); // keep entity as parameter
+	UserFormDto toFormDto(User entity, List<IdNamePair> roles, List<IdNamePair> specializations,
+			List<IdNamePair> facilities);
 
 	@Mapping(target = "passwordHash", ignore = true)
 	@Mapping(target = "id", ignore = true)

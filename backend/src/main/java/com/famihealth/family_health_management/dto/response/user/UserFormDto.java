@@ -1,8 +1,9 @@
 package com.famihealth.family_health_management.dto.response.user;
 
+import java.util.List;
 import java.util.Set;
 
-import com.famihealth.family_health_management.dto.response.role.RoleDto;
+import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 import lombok.AllArgsConstructor;
@@ -17,5 +18,7 @@ import lombok.NoArgsConstructor;
 public class UserFormDto {
 	@JsonUnwrapped
 	private UserDetailDto userDetails;
-	private Set<RoleDto> roles;
+	private List<IdNamePair> roles;
+	private List<IdNamePair> specializations;
+	private List<IdNamePair> facilities;
 }

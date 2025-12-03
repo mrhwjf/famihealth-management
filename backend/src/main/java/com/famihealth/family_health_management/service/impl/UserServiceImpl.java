@@ -13,14 +13,19 @@ import com.famihealth.family_health_management.dto.request.user.UserCreateReques
 import com.famihealth.family_health_management.dto.request.user.UserFilterRequest;
 import com.famihealth.family_health_management.dto.request.user.UserUpdateRequest;
 import com.famihealth.family_health_management.dto.response.common.FilterOptionDto;
+import com.famihealth.family_health_management.dto.response.common.IdNamePair;
 import com.famihealth.family_health_management.dto.response.common.PageResponse;
 import com.famihealth.family_health_management.dto.response.user.UserDetailDto;
 import com.famihealth.family_health_management.dto.response.user.UserFormDto;
 import com.famihealth.family_health_management.dto.response.user.UserSummaryDto;
 import com.famihealth.family_health_management.mapper.UserMapper;
+import com.famihealth.family_health_management.model.Facility;
 import com.famihealth.family_health_management.model.Role;
+import com.famihealth.family_health_management.model.Specialization;
 import com.famihealth.family_health_management.model.User;
+import com.famihealth.family_health_management.repository.FacilityRepository;
 import com.famihealth.family_health_management.repository.RoleRepository;
+import com.famihealth.family_health_management.repository.SpecializationRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.UserService;
 import com.famihealth.family_health_management.utils.PageResponseMapper;
@@ -38,6 +43,8 @@ public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
 	private final UserMapper userMapper;
 	private final RoleRepository roleRepository;
+	private final SpecializationRepository specializationRepository;
+	private final FacilityRepository facilityRepository;
 
 	@Override
 	public UserDetailDto create(UserCreateRequest dto) {
@@ -99,9 +106,17 @@ public class UserServiceImpl implements UserService {
 	@Override
 	@Transactional(readOnly = true)
 	public UserFormDto getCreateFormData() {
-		Set<Role> allRoles = new HashSet<>(roleRepository.findAll());
+		List<IdNamePair> allRoles = roleRepository.findAll().stream()
+				.map(r -> new IdNamePair(r.getId(), r.getName()))
+				.toList();
+		List<IdNamePair> allSpecializations = specializationRepository.findAll().stream()
+				.map(s -> new IdNamePair(s.getId(), s.getName()))
+				.toList();
+		List<IdNamePair> allFacilities = facilityRepository.findAll().stream()
+				.map(f -> new IdNamePair(f.getId(), f.getName()))
+				.toList();
 		// Pass null user to mapper — userDetails will be null
-		return userMapper.toFormDto(null, allRoles);
+		return userMapper.toFormDto(null, allRoles, allSpecializations, allFacilities);
 	}
 
 	@Override
@@ -110,8 +125,16 @@ public class UserServiceImpl implements UserService {
 		User user = userRepository.findById(id)
 				.orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
-		Set<Role> allRoles = new HashSet<>(roleRepository.findAll());
-		return userMapper.toFormDto(user, allRoles);
+		List<IdNamePair> allRoles = roleRepository.findAll().stream()
+				.map(r -> new IdNamePair(r.getId(), r.getName()))
+				.toList();
+		List<IdNamePair> allSpecializations = specializationRepository.findAll().stream()
+				.map(s -> new IdNamePair(s.getId(), s.getName()))
+				.toList();
+		List<IdNamePair> allFacilities = facilityRepository.findAll().stream()
+				.map(f -> new IdNamePair(f.getId(), f.getName()))
+				.toList();
+		return userMapper.toFormDto(user, allRoles, allSpecializations, allFacilities);
 	}
 
 	@Override
