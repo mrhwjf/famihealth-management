@@ -89,8 +89,9 @@ public class CloudinaryServiceImpl implements CloudinaryService {
 	@Transactional
 	public FileUploadResponseDto uploadDoctorCertificate(String sessionId, Integer doctorId, MultipartFile file) {
 		SessionData session = requireSession(sessionId);
-		if (!doctorId.equals(session.getUserId())) {
-			throw new ForbiddenException("You may only upload your own certificate");
+		// Either the doctor themselves or an admin can upload the certificate
+		if (!session.getUserId().equals(doctorId) && !session.getRole().contains("ADMIN")) {
+			throw new ForbiddenException("You do not have permission to upload this doctor's certificate");
 		}
 		DoctorProfile profile = doctorProfileRepository.findByDoctorId(doctorId)
 				.orElseThrow(() -> new NotFoundException("Doctor profile not found"));

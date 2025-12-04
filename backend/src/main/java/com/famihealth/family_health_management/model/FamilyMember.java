@@ -70,6 +70,6 @@ public class FamilyMember {
 	@Column(name = "profile_url")
 	private String profileUrl;
 
-	@OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@OneToMany(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	private Set<MemberAccess> memberAccesses = new HashSet<>();
 }

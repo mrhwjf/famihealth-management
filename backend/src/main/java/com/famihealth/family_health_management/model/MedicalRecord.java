@@ -66,6 +66,6 @@ public class MedicalRecord {
 	@UpdateTimestamp
 	private LocalDateTime updatedAt;
 
-	@OneToMany(mappedBy = "medicalRecord", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.REMOVE)
+	@OneToMany(mappedBy = "medicalRecord", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
 	private List<MedicalDocument> documents;
 }

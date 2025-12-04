@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.famihealth.family_health_management.dto.request.user.UserCreateRequest;
@@ -41,10 +42,14 @@ public class UserServiceImpl implements UserService {
 	private final RoleRepository roleRepository;
 	private final SpecializationRepository specializationRepository;
 	private final FacilityRepository facilityRepository;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public UserDetailDto create(UserCreateRequest dto) {
 		User user = userMapper.toEntity(dto);
+		if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+			user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+		}
 
 		// Handle role
 		if (dto.getRoleId() != null) {
@@ -72,6 +77,9 @@ public class UserServiceImpl implements UserService {
 
 		// 1. Update simple fields
 		userMapper.updateEntityFromDto(dto, user);
+		if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+			user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+		}
 
 		// 2. Handle role
 		if (dto.getRoleId() != null) {

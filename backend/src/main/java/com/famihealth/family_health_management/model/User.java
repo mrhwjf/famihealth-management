@@ -68,11 +68,11 @@ public class User {
 	@Builder.Default
 	private Boolean locked = false;
 
-	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@Builder.Default
 	private List<FamilyAccess> familyAccesses = new ArrayList<>();
 
-	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.REMOVE, orphanRemoval = true)
+	@OneToOne(mappedBy = "doctor", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
 	private DoctorProfile doctorProfile;
 
 }

@@ -1,5 +1,6 @@
 package com.famihealth.family_health_management.service.impl;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +26,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class DoctorServiceImpl implements DoctorService {
-
 	private final UserRepository userRepository;
 	private final RoleRepository roleRepository;
 	private final FacilityRepository facilityRepository;
 	private final SpecializationRepository specializationRepository;
 	private final UserMapper userMapper;
 	private final DoctorProfileMapper doctorProfileMapper;
+	private final PasswordEncoder passwordEncoder;
 
 	@Override
 	public UserDetailDto create(DoctorCreateRequest req) {
@@ -42,6 +43,11 @@ public class DoctorServiceImpl implements DoctorService {
 			var role = roleRepository.findById(req.getUser().getRoleId())
 					.orElseThrow(() -> new RuntimeException("Role not found"));
 			user.setRole(role);
+		}
+
+		// Hash password
+		if (req.getUser().getPassword() != null && !req.getUser().getPassword().isBlank()) {
+			user.setPasswordHash(passwordEncoder.encode(req.getUser().getPassword()));
 		}
 
 		// Handle doctor profile
@@ -66,6 +72,11 @@ public class DoctorServiceImpl implements DoctorService {
 			var role = roleRepository.findById(req.getUser().getRoleId())
 					.orElseThrow(() -> new RuntimeException("Role not found"));
 			user.setRole(role);
+		}
+
+		// Hash password
+		if (req.getUser().getPassword() != null && !req.getUser().getPassword().isBlank()) {
+			user.setPasswordHash(passwordEncoder.encode(req.getUser().getPassword()));
 		}
 
 		// Handle doctor profile
