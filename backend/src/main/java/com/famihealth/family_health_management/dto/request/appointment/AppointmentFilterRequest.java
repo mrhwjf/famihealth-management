@@ -10,8 +10,6 @@ import com.famihealth.family_health_management.enums.AppointmentStatus;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 
-import java.time.LocalDate;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,11 +22,9 @@ public class AppointmentFilterRequest {
 
 	private Integer doctorId;
 
-	@Builder.Default
-	private String startDate = LocalDate.now().toString();
+	private String startDate;
 
-	@Builder.Default
-	private String endDate = LocalDate.now().toString();
+	private String endDate;
 
 	@Enumerated(EnumType.STRING)
 	private AppointmentStatus status;
