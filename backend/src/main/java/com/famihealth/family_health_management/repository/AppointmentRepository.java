@@ -23,7 +23,12 @@ public interface AppointmentRepository
 
 	List<Appointment> findByAppointmentDatetimeBetween(LocalDateTime start, LocalDateTime end);
 
-	Set<Integer> findPatientIdsByDoctorId(Integer doctorId);
+	@Query("""
+			select distinct a.patient.id
+			from Appointment a
+			where a.doctor.id = :doctorId
+			""")
+	Set<Integer> findPatientIdsByDoctorId(@Param("doctorId") Integer doctorId);
 
 	@Query("SELECT a FROM Appointment a WHERE a.patient.id = :patientId " +
 			"AND YEAR(a.appointmentDatetime) = :year " +
