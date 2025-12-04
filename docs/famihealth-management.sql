@@ -426,6 +426,13 @@ INSERT INTO medical_documents (medical_record_id, file_name, upload_date, file_u
 (2, 'Viêm họng - Nguyễn Văn B.pdf', '2023-02-10 11:00:00', 'http://example.com/documents/viem-hong-nguyenvanb.pdf');
 
 
+-- =========================
+-- APPPOINTMENTS
+-- =========================
+INSERT INTO appointments (issuer_id, patient_id, doctor_id, appointment_datetime, reason, status, notes) VALUES
+(3, 1, 2, '2023-03-01 09:00:00', 'Khám sức khỏe định kỳ', 'SCHEDULED', 'Nguyễn Văn A muốn kiểm tra tổng quát'),
+(3, 2, 2, '2023-03-02 10:00:00', 'Tiêm phòng cúm', 'SCHEDULED', 'Nguyễn Văn B cần tiêm phòng cúm mùa');
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 
