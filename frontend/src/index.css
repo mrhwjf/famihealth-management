@@ -51,3 +51,13 @@ canvas {
   transform: scale(1.01);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
+.logout-menu-item {
+  background-color: #ff4d4f !important;
+  color: white !important;
+  border-radius: 6px;
+}
+
+.logout-menu-item:hover {
+  background-color: #d9363e !important;
+  color: white !important;
+}

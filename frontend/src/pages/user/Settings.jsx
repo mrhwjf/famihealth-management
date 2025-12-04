@@ -339,8 +339,8 @@ export default function SettingsPage() {
           </Card> */}
 
           <Divider />
-
-          <Card>
+          {/* PREFERENCES */}
+          {/* <Card>
             <Title level={4}>
               <BgColorsOutlined style={{ marginRight: 8 }} />
               Preferences
@@ -378,7 +378,7 @@ export default function SettingsPage() {
                 </Select>
               </Form.Item>
             </Form>
-          </Card>
+          </Card> */}
 
           {/* <Divider />
 

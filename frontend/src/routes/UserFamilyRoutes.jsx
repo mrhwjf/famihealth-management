@@ -60,7 +60,7 @@ const UserFamilyRoutes = {
         {
           path: "medical-records/:id",
           element: <MemberMedicalRecords />,
-        }
+        },
       ],
     },
   ],

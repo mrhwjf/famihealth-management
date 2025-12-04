@@ -1,4 +1,7 @@
-import React, { useMemo, useState } from "react";
+// Appointments.jsx
+import React, { useMemo, useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import dayjs from "dayjs";
 import {
   Badge,
@@ -16,12 +19,12 @@ import {
   Select,
   List,
   Typography,
+  message,
 } from "antd";
 import useIsMobile from "../../hooks/useIsMobile";
+import { appointmentService } from "../../services/appointmentService";
 
 const { Title, Text } = Typography;
-const { Option } = Select;
-
 const layoutStyle = {
   padding: "16px",
   overflow: "hidden",
@@ -29,92 +32,293 @@ const layoutStyle = {
   maxWidth: "100%",
 };
 
-const STATIC_EVENTS_FOR_DAY = (date) => {
-  // example static events you had before (kept for compatibility)
-  const d = date.date();
-  const list = [];
-  if (d === 8) {
-    list.push(
-      { type: "warning", content: "This is warning event." },
-      { type: "success", content: "This is usual event." }
-    );
-  } else if (d === 10) {
-    list.push(
-      { type: "warning", content: "This is warning event." },
-      { type: "success", content: "This is usual event." },
-      { type: "error", content: "This is error event." }
-    );
-  } else if (d === 15) {
-    list.push(
-      { type: "warning", content: "This is warning event" },
-      { type: "success", content: "This is very long usual event......" },
-      { type: "error", content: "This is error event 1." },
-      { type: "error", content: "This is error event 2." },
-      { type: "error", content: "This is error event 3." },
-      { type: "error", content: "This is error event 4." }
-    );
+// DEV doctors for testing
+const DEV_DOCTORS = [
+  { id: 1, name: "Dr. Lê Văn Long" },
+  { id: 2, name: "Dr. Trần Thị Hương" },
+  { id: 3, name: "Dr. Nguyễn Thị Lan" },
+];
+
+const normalizeDoctor = (raw = {}) => {
+  const id =
+    raw.id ?? raw.doctorId ?? raw.userId ?? raw.user?.id ?? raw.value ?? null;
+  const fallback = id ? `Bác sĩ #${id}` : "Bác sĩ";
+  const name =
+    raw.name ??
+    raw.doctorName ??
+    raw.fullName ??
+    raw.displayName ??
+    raw.user?.name ??
+    fallback;
+  return {
+    ...raw,
+    id,
+    name,
+  };
+};
+
+const mergeDoctorLists = (primary = [], secondary = []) => {
+  const map = new Map();
+  [...primary, ...secondary].forEach((doc) => {
+    if (!doc || doc.id === undefined || doc.id === null) return;
+    const key = String(doc.id);
+    if (!map.has(key)) {
+      map.set(key, doc);
+    }
+  });
+  return Array.from(map.values());
+};
+
+const normalizeFamilyMember = (raw = {}) => {
+  const id = raw.id ?? raw.memberId ?? raw.familyMemberId ?? null;
+  const name = raw.name ?? raw.fullName ?? raw.displayName ?? "Thành viên";
+  return { ...raw, id, name };
+};
+
+const normalizeStatus = (raw) => {
+  if (!raw && raw !== 0) return null;
+  if (typeof raw === "string") {
+    return { value: raw, label: raw };
   }
-  return list;
+  const value =
+    raw.value ?? raw.code ?? raw.key ?? raw.id ?? raw.status ?? raw.name ?? null;
+  if (value === null) return null;
+  const label = raw.label ?? raw.name ?? raw.displayName ?? String(value);
+  return { ...raw, value, label };
 };
 
 export default function Appointments() {
-  // eventsByDate: { "YYYY-MM-DD": [{ type, content, source }] }
-  const [eventsByDate, setEventsByDate] = useState(() => {
-    // optional: seed with an example event for today
-    const todayKey = dayjs().format("YYYY-MM-DD");
-    return {
-      [todayKey]: [
-        {
-          type: "success",
-          content: "Welcome! Example appointment",
-          source: "seed",
-        },
-      ],
-    };
-  });
+  const [eventsByDate, setEventsByDate] = useState({});
+  const [doctorList, setDoctorList] = useState(
+    DEV_DOCTORS.map((doc) => normalizeDoctor(doc))
+  );
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [appointmentStatuses, setAppointmentStatuses] = useState([]);
+  const defaultStatusValue = useMemo(
+    () => appointmentStatuses[0]?.value ?? "PENDING",
+    [appointmentStatuses]
+  );
   const isMobile = useIsMobile();
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalType] = useState("appointment"); // or "medication"
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const sessionId =
+    sessionStorage.getItem("session_id") ||
+    "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+  const rawUserId = sessionStorage.getItem("user_id");
+  const currentUserId = rawUserId ? Number(rawUserId) : null;
 
-  // helper: add event to state
-  const addEvent = ({ date, content, type, source }) => {
+  // build events map from appointment items - show doctorId only (#<id>)
+  const buildEventsMap = (items) => {
+    const map = {};
+    (items || []).forEach((it) => {
+      const dt =
+        it.appointmentDatetime || it.appointmentDate || it.date || null;
+      const key = dt ? dayjs(dt).format("YYYY-MM-DD") : "_unknown";
+      const doctorId = it.doctorId ?? (it.doctor && it.doctor.id) ?? "_";
+      const label = it.reason
+        ? `${it.reason} · #${doctorId}`
+        : `Appointment · #${doctorId}`;
+      const type =
+        (it.status || "PENDING").toLowerCase() === "pending"
+          ? "warning"
+          : "success";
+      map[key] = map[key] || [];
+      map[key].push({
+        type,
+        content: label,
+        source: "appointment",
+        meta: it,
+      });
+    });
+    return map;
+  };
+
+  // load doctors and upcoming appointments
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+        const [formDataRes, apptRes] = await Promise.all([
+          appointmentService
+            .getAppointmentFormData(sessionId)
+            .catch(() => null),
+          appointmentService
+            .getAppointments(sessionId, {
+              patientId: currentUserId,
+              upcoming: true,
+            })
+            .catch(() => null),
+        ]);
+
+        if (mounted && formDataRes) {
+          const payload = formDataRes.data ?? formDataRes;
+          const members = Array.isArray(payload?.familyMembers)
+            ? payload.familyMembers
+                .map((m) => normalizeFamilyMember(m))
+                .filter((m) => m.id !== null)
+            : [];
+          const doctors = Array.isArray(payload?.doctors)
+            ? payload.doctors
+                .map((d) => normalizeDoctor(d))
+                .filter((d) => d.id !== null)
+            : [];
+          const statuses = Array.isArray(payload?.statuses)
+            ? payload.statuses
+                .map((s) => normalizeStatus(s))
+                .filter((s) => s && s.value !== null)
+            : [];
+
+          setFamilyMembers(members);
+          if (doctors.length > 0) {
+            setDoctorList((prev) => mergeDoctorLists(doctors, prev));
+          }
+          setAppointmentStatuses(statuses);
+        }
+
+        if (mounted && apptRes?.data?.items) {
+          const map = buildEventsMap(apptRes.data.items);
+          setEventsByDate(map);
+        }
+      } catch (err) {
+        console.error("Failed to load appointments/doctors", err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => (mounted = false);
+  }, [sessionId, currentUserId]);
+  useEffect(() => {
+    const state = location?.state ?? {};
+    if (!state.openModal) return;
+
+    const doctorIdFromNav = state.doctorId ?? null;
+    const doctorNameFromNav = state.doctorName ?? "";
+
+    if (doctorIdFromNav) {
+      const injected = normalizeDoctor({
+        id: doctorIdFromNav,
+        name: doctorNameFromNav,
+      });
+      setDoctorList((prev) => mergeDoctorLists([injected], prev));
+    }
+
+    const defaultPatientId = state.patientId ?? familyMembers[0]?.id ?? null;
+
+    form.setFieldsValue({
+      patientId: defaultPatientId,
+      doctorId:
+        doctorIdFromNav ?? (doctorList.length > 0 ? doctorList[0].id : null),
+      appointmentDatetime: dayjs().add(1, "day").hour(9).minute(0),
+      reason: state.reason ?? "",
+      notes: state.notes ?? "",
+      status: state.status ?? defaultStatusValue,
+    });
+
+    setModalVisible(true);
+    navigate(location.pathname, { replace: true, state: {} });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    location,
+    doctorList.length,
+    familyMembers.length,
+    currentUserId,
+    form,
+    navigate,
+    defaultStatusValue,
+  ]);
+  const addEvent = ({
+    date,
+    content,
+    type = "warning",
+    source = "appointment",
+    meta = {},
+  }) => {
     const key = dayjs(date).format("YYYY-MM-DD");
     setEventsByDate((prev) => {
       const prevList = prev[key] ? [...prev[key]] : [];
-      return {
-        ...prev,
-        [key]: [...prevList, { type, content, source }],
-      };
+      return { ...prev, [key]: [...prevList, { type, content, source, meta }] };
     });
   };
 
-  // open modal from the two buttons
-  // const openAddModal = (type) => {
-  //   setModalType(type);
-  //   form.resetFields();
-  //   // prefill type-specific values
-  //   form.setFieldsValue({
-  //     date: dayjs(),
-  //     type: type === "medication" ? "success" : "warning",
-  //     title: type === "medication" ? "Uống thuốc" : "Khám / Hẹn",
-  //   });
-  //   setModalVisible(true);
-  // };
+  useEffect(() => {
+    if (!modalVisible) return;
+    const currentStatus = form.getFieldValue("status");
+    if (!currentStatus && defaultStatusValue) {
+      form.setFieldsValue({ status: defaultStatusValue });
+    }
+  }, [defaultStatusValue, modalVisible, form]);
+
+  // open modal & prefill
+  const openAddModal = () => {
+    form.resetFields();
+    form.setFieldsValue({
+      patientId: familyMembers[0]?.id ?? null,
+      doctorId: doctorList.length > 0 ? doctorList[0].id : null,
+      appointmentDatetime: dayjs().add(1, "day").hour(9).minute(0),
+      reason: "",
+      notes: "",
+      status: defaultStatusValue,
+    });
+    setModalVisible(true);
+  };
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
+
+      const defaultStatus = appointmentStatuses[0] || "PENDING";
+      const payload = {
+        patientId: Number(values.patientId),
+        doctorId: Number(values.doctorId),
+        appointmentDatetime: dayjs(values.appointmentDatetime).toISOString(),
+        reason: values.reason || "",
+        notes: values.notes || "",
+        status: values.status || defaultStatus,
+      };
+
+      setLoading(true);
+
+      let created = null;
+      try {
+        const res = await appointmentService.createAppointment(
+          sessionId,
+          payload
+        );
+        created = res?.data ?? res ?? payload;
+      } catch (err) {
+        console.warn("API createAppointment lỗi, fallback cục bộ:", err);
+        created = {
+          ...payload,
+          id: Date.now(),
+          createdAt: new Date().toISOString(),
+        };
+        message.warning(
+          "Backend không trả lời — lịch được thêm cục bộ để test."
+        );
+      }
+
+      // add event text: reason · #doctorId
       addEvent({
-        date: values.date,
-        content: values.title,
-        type: values.type,
-        source: modalType,
+        date: payload.appointmentDatetime,
+        content: `${payload.reason || "Lịch hẹn"} · #${payload.doctorId}`,
+        type: "warning",
+        source: "appointment",
+        meta: created,
       });
+
+      message.success("Đặt lịch thành công (hiển thị cục bộ).");
       setModalVisible(false);
       form.resetFields();
     } catch (err) {
-      // validation failed
+      console.error("Validate / tạo lịch thất bại:", err);
+      message.error(err?.message || "Không thể tạo lịch hẹn");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -123,34 +327,9 @@ export default function Appointments() {
     form.resetFields();
   };
 
-  // date -> listData: include static + dynamic events
   const getListData = (value) => {
-    const dateKey = dayjs(value).format("YYYY-MM-DD");
-    const dynamic = eventsByDate[dateKey]
-      ? eventsByDate[dateKey].map((e) => ({ ...e }))
-      : [];
-    const statics = STATIC_EVENTS_FOR_DAY(value);
-    // ensure stable order: dynamic events first (so newly added show top)
-    return [...dynamic, ...statics];
-  };
-
-  // month cell example (kept from original)
-  const getMonthData = (value) => {
-    if (value.month() === 8) {
-      return 1394;
-    }
-    return null;
-  };
-
-  const monthCellRender = (value) => {
-    const num = getMonthData(value);
-    if (!num) return null;
-    return (
-      <div className="notes-month" style={{ textAlign: "center" }}>
-        <section>{num}</section>
-        <span>Backlog number</span>
-      </div>
-    );
+    const key = dayjs(value).format("YYYY-MM-DD");
+    return eventsByDate[key] ? [...eventsByDate[key]] : [];
   };
 
   const dateCellRender = (value) => {
@@ -169,20 +348,16 @@ export default function Appointments() {
 
   const cellRender = (current, info) => {
     if (info && info.type === "date") return dateCellRender(current);
-    if (info && info.type === "month") return monthCellRender(current);
     return info?.originNode ?? null;
   };
 
-  // compute upcoming events list (flatten, sort by date ascending, limit to N)
   const upcoming = useMemo(() => {
     const arr = [];
     Object.entries(eventsByDate).forEach(([dateKey, items]) => {
-      items.forEach((it) => {
-        arr.push({ date: dateKey, ...it });
-      });
+      items.forEach((it) => arr.push({ date: dateKey, ...it }));
     });
     arr.sort((a, b) => dayjs(a.date).unix() - dayjs(b.date).unix());
-    return arr.slice(0, 8); // show top 8 upcoming
+    return arr.slice(0, 8);
   }, [eventsByDate]);
 
   return (
@@ -196,6 +371,14 @@ export default function Appointments() {
             <Text type="secondary">
               Quản lý lịch hẹn và lịch uống thuốc của gia đình.
             </Text>
+          </Col>
+
+          <Col>
+            <Space>
+              <Button type="primary" onClick={openAddModal}>
+                Đặt lịch hẹn
+              </Button>
+            </Space>
           </Col>
         </Row>
 
@@ -216,7 +399,13 @@ export default function Appointments() {
                             <Text strong>{item.content}</Text>
                           </span>
                         }
-                        description={dayjs(item.date).format("DD/MM/YYYY")}
+                        description={
+                          item.meta?.appointmentDatetime
+                            ? dayjs(item.meta.appointmentDatetime).format(
+                                "DD/MM/YYYY HH:mm"
+                              )
+                            : dayjs(item.date).format("DD/MM/YYYY")
+                        }
                       />
                       <Text
                         type="secondary"
@@ -237,60 +426,86 @@ export default function Appointments() {
           style={{
             overflowX: isMobile ? "auto" : "visible",
             WebkitOverflowScrolling: "touch",
-          }}
-        >
-          <div
-            style={{
-              width: isMobile ? "700px" : "100%",
-              maxWidth: "100%",
-            }}
-          >
+          }}>
+          <div style={{ width: isMobile ? "700px" : "100%", maxWidth: "100%" }}>
             <Calendar cellRender={cellRender} />
           </div>
         </div>
       </Card>
 
       <Modal
-        title={
-          modalType === "medication" ? "Thêm lịch uống thuốc" : "Thêm lịch hẹn"
-        }
-        visible={modalVisible}
+        title="Đặt lịch hẹn"
+        open={modalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
         okText="Lưu"
         cancelText="Hủy"
+        confirmLoading={loading}
         destroyOnClose>
-        <Form
-          form={form}
-          layout="vertical"
-          initialValues={{ date: dayjs(), type: "success" }}>
+        <Form form={form} layout="vertical">
           <Form.Item
-            name="title"
-            label="Tiêu đề"
-            rules={[{ required: true, message: "Nhập tiêu đề" }]}>
-            <Input
-              placeholder={
-                modalType === "medication"
-                  ? "Ví dụ: Uống Paracetamol"
-                  : "Ví dụ: Khám nha khoa"
-              }
+            name="patientId"
+            label="Thành viên gia đình"
+            rules={[{ required: true, message: "Chọn thành viên" }]}
+            initialValue={familyMembers[0]?.id ?? null}>
+            <Select
+              placeholder="Chọn thành viên"
+              optionLabelProp="label"
+              notFoundContent="Không có thành viên"
+              options={familyMembers.map((member) => ({
+                value: member.id,
+                label: member.name ?? "Thành viên",
+              }))}
             />
           </Form.Item>
 
           <Form.Item
-            name="date"
-            label="Ngày"
-            rules={[{ required: true, message: "Chọn ngày" }]}>
-            <DatePicker style={{ width: "100%" }} />
+            name="doctorId"
+            label="Bác sĩ"
+            rules={[{ required: true, message: "Chọn bác sĩ" }]}>
+            <Select
+              placeholder="Chọn bác sĩ"
+              optionLabelProp="label"
+              options={doctorList.map((d) => ({
+                value: d.id,
+                label: d.name ?? d.fullName ?? "Không rõ tên",
+              }))}
+              notFoundContent="Không có bác sĩ"
+            />
           </Form.Item>
 
-          <Form.Item name="type" label="Loại hiển thị">
-            <Select>
-              <Option value="success">Điều trị thường xuyên</Option>
-              <Option value="warning">Lịch hẹn quan trọng</Option>
-              <Option value="error">Khẩn cấp</Option>
-              <Option value="default">Sinh hoạt nhắc nhở</Option>
-            </Select>
+          <Form.Item
+            name="appointmentDatetime"
+            label="Ngày & giờ"
+            rules={[
+              { required: true, message: "Chọn thời gian" },
+              () => ({
+                validator(_, value) {
+                  if (!value) return Promise.reject();
+                  if (dayjs(value).isBefore(dayjs(), "minute"))
+                    return Promise.reject(
+                      new Error("Không thể chọn thời gian trước hiện tại")
+                    );
+                  return Promise.resolve();
+                },
+              }),
+            ]}>
+            <DatePicker style={{ width: "100%" }} showTime />
+          </Form.Item>
+
+          <Form.Item
+            name="reason"
+            label="Lý do"
+            rules={[{ required: true, message: "Nhập lý do" }]}>
+            <Input placeholder="Ví dụ: Tên bệnh nhân - Khám định kỳ" />
+          </Form.Item>
+
+          <Form.Item name="status" label="Trạng thái" initialValue="PENDING">
+            <Input disabled value="PENDING" />
+          </Form.Item>
+
+          <Form.Item name="notes" label="Ghi chú">
+            <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>

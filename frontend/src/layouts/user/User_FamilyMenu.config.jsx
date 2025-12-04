@@ -64,9 +64,15 @@ const User_FamilyMenuConfig = () => {
     },
     {
       key: "8",
-      label: "Đăng xuất",
-      icon: <LogoutOutlined />,
+      label: <span style={{ color: "white", fontWeight: 600 }}>Đăng xuất</span>,
+      icon: <LogoutOutlined style={{ color: "white" }} />,
       path: "/user_family/signout",
+      style: {
+        backgroundColor: "#ff4d4f",
+        borderRadius: 6,
+        color: "white",
+      },
+      className: "logout-menu-item",
     },
   ];
 

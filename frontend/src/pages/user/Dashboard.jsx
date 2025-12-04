@@ -1,6 +1,9 @@
 // StoreLayout.jsx
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
+import imgGrass from "./mau-anh-the-dep-lam-the-can-cuoc.jpg";
+import imgPhong from "./a12f377df925c0bffdc309b91a2efcf4.jpg";
+import imgThai from "./anh-the-hoc-sinh_100828479.jpg";
+import imgPhu from "./anh-the-hoc-sinh-phong-xanh.jpg";
 import useIsMobile from "../../hooks/useIsMobile";
 import {
   Layout,
@@ -18,6 +21,8 @@ import {
   Flex,
   Calendar,
   theme,
+  List,
+  Typography,
 } from "antd";
 import {
   MenuOutlined,
@@ -29,6 +34,7 @@ import {
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Meta } = Card;
+const { Text } = Typography;
 //Calendar onPanelChange function
 const onPanelChange = (value, mode) => {
   console.log(value.format("YYYY-MM-DD"), mode);
@@ -52,7 +58,7 @@ const FamilyMembers_data = [
     age: 20,
     gender: "Male",
     bloodType: "O+",
-    cardImage: "src/pages/user/namaste-dog-smiling.png", //add image later
+    cardImage: imgGrass, //add image later
   },
   {
     familyID: "1",
@@ -61,9 +67,7 @@ const FamilyMembers_data = [
     age: 19,
     gender: "Female",
     bloodType: "A-",
-
-    cardImage:
-      "src/pages/user/2d8fda44-a143-4a14-93a7-e9d035b23fff-1676957756500.webp",
+    cardImage: imgPhong,
   },
   {
     familyID: "1",
@@ -72,8 +76,7 @@ const FamilyMembers_data = [
     age: 18,
     gender: "Male",
     bloodType: "B+",
-    cardImage:
-      "src/pages/user/static-images.vnncdn.net-vps_images_publish-000001-000003-2025-11-4-_pho-anh-hai-1111.jpg", //add image later
+    cardImage: imgThai,
   },
   {
     familyID: "1",
@@ -82,7 +85,7 @@ const FamilyMembers_data = [
     age: 17,
     gender: "Female",
     bloodType: "AB-",
-    cardImage: "src/pages/user/6rvsnz.jpg", //add image later
+    cardImage: imgPhu,
   },
 ];
 //3. Alerts & Health Reminders data
@@ -105,32 +108,32 @@ const AlertsandHealthReminders_data = [
   },
 ];
 //4. Upcoming Appointments data
-const UpcomingAppointments_data = [
-  {
-    name: "Nguyễn Grass",
-    doctorName: "Dr. Lê Văn Long",
-    date: "20/11/2023",
-    time: "9:00 AM",
-    status: "Scheduled",
-    //Book new appointment button can be added later
-  },
-  {
-    name: "Nguyễn Hữu Phong",
-    doctorName: "Dr. Lê Văn Long",
-    date: "05/12/2023",
-    time: "3:00 PM",
-    status: "Scheduled",
-    //Book new appointment button can be added later
-  },
-  {
-    name: "Đỗ Thiên Phú",
-    doctorName: "Dr. Trần Thị Hương",
-    date: "15/12/2023",
-    time: "11:00 AM",
-    status: "Cancelled",
-    //Book new appointment button can be added later
-  },
-];
+// const UpcomingAppointments_data = [
+//   {
+//     name: "Nguyễn Grass",
+//     doctorName: "Dr. Lê Văn Long",
+//     date: "20/11/2023",
+//     time: "9:00 AM",
+//     status: "Scheduled",
+//     //Book new appointment button can be added later
+//   },
+//   {
+//     name: "Nguyễn Hữu Phong",
+//     doctorName: "Dr. Lê Văn Long",
+//     date: "05/12/2023",
+//     time: "3:00 PM",
+//     status: "Scheduled",
+//     //Book new appointment button can be added later
+//   },
+//   {
+//     name: "Đỗ Thiên Phú",
+//     doctorName: "Dr. Trần Thị Hương",
+//     date: "15/12/2023",
+//     time: "11:00 AM",
+//     status: "Cancelled",
+//     //Book new appointment button can be added later
+//   },
+// ];
 //5. Recent Medical Records data
 const RecentMedicalRecords_data = [
   {
@@ -176,6 +179,26 @@ const VaccinationSummary_data = {
 };
 export default function Dashboard() {
   const isMobile = useIsMobile();
+  const [upcoming, setUpcoming] = useState([]);
+  const sessionId = sessionStorage.getItem("session_id") || "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+  const userId = Number(sessionStorage.getItem("user_id") || 0);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        // fetch upcoming for current user or family; adjust params to backend
+        const res = await appointmentService.getAppointments(sessionId, { patientId: userId, upcoming: true });
+        const items = res?.data?.items ?? [];
+        if (!mounted) return;
+        setUpcoming(items);
+      } catch (err) {
+        console.error("Load upcoming failed", err);
+      }
+    };
+    load();
+    return () => (mounted = false);
+  }, [sessionId, userId]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -210,64 +233,67 @@ export default function Dashboard() {
             {/* Upcoming Appointments Cards Grid */}
             <Col span={isMobile ? 24 : 17}>
               <Card className="hover-expand-card" hoverable>
-                {isMobile ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 30,
-                    }}>
-                    <div>
-                      <Meta title="Upcoming Appointments" description={null} />
-                      <ul className="list-disc ml-5 mt-2">
-                        {UpcomingAppointments_data.map((appointment, index) => (
-                          <li key={index}>
-                            {appointment.name} have an appointment with <br />{" "}
-                            {appointment.doctorName} - {appointment.date} at{" "}
-                            {appointment.time} - {appointment.status}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div style={{ marginTop: "20px" }}>
-                      {/* Calender */}
-                      <Meta title="Book new appointment" description={null} />
-                      <div style={{ width: 300, marginTop: "10px" }}>
-                        <Calendar
-                          fullscreen={false}
-                          onPanelChange={onPanelChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <Meta title="Upcoming Appointments" description={null} />
+
+                {upcoming.length === 0 ? (
+                  <Text
+                    type="secondary"
+                    style={{ display: "block", marginTop: 12 }}>
+                    Không có lịch hẹn sắp tới.
+                  </Text>
                 ) : (
-                  <Flex gap={30}>
-                    <div>
-                      <Meta title="Upcoming Appointments" description={null} />
-                      <ul className="list-disc ml-5 mt-2">
-                        {UpcomingAppointments_data.map((appointment, index) => (
-                          <li key={index}>
-                            {appointment.name} have an appointment with <br />{" "}
-                            {appointment.doctorName} - {appointment.date} at{" "}
-                            {appointment.time} - {appointment.status}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div style={{ marginTop: "20px" }}>
-                      {/* Calender */}
-                      <Meta title="Book new appointment" description={null} />
-                      <div style={{ width: 300, marginTop: "10px" }}>
-                        <Calendar
-                          fullscreen={false}
-                          onPanelChange={onPanelChange}
-                        />
-                      </div>
-                    </div>
-                  </Flex>
+                  <List
+                    style={{ marginTop: 16 }}
+                    dataSource={upcoming}
+                    renderItem={(item) => {
+                      const meta = item.meta || {};
+
+                      const doctorName =
+                        DOCTOR_LIST.find((d) => d.id === Number(meta.doctorId))
+                          ?.name || "_";
+
+                      const patient =
+                        meta.patientId ===
+                        Number(sessionStorage.getItem("user_id"))
+                          ? "Bạn"
+                          : meta.patientName ||
+                            (meta.patientId ? `#${meta.patientId}` : "_");
+
+                      const dt = meta.appointmentDatetime
+                        ? dayjs(meta.appointmentDatetime).format(
+                            "DD/MM/YYYY HH:mm"
+                          )
+                        : dayjs(item.date).format("DD/MM/YYYY HH:mm");
+
+                      const reason = meta.reason || item.content || "_";
+                      const status = (meta.status || "pending").toLowerCase();
+
+                      return (
+                        <List.Item>
+                          <List.Item.Meta
+                            avatar={<Badge status={item.type} />}
+                            title={
+                              <span>
+                                <strong>{patient}</strong> · {doctorName}
+                              </span>
+                            }
+                            description={
+                              <>
+                                <div>{reason}</div>
+                                <div style={{ color: "var(--ant-gray-6)" }}>
+                                  {dt} · {status}
+                                </div>
+                              </>
+                            }
+                          />
+                        </List.Item>
+                      );
+                    }}
+                  />
                 )}
               </Card>
             </Col>
+
             {/* Family Members Cards Grid */}
             <Col span={24}>
               <Card className="">

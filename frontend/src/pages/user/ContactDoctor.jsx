@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// ContactDoctor.jsx
+import React, { useEffect, useState, useCallback } from "react";
 import useIsMobile from "../../hooks/useIsMobile";
 import {
   Layout,
@@ -11,8 +12,13 @@ import {
   Col,
   Rate,
   Pagination,
+  Empty,
+  Spin,
+  message,
 } from "antd";
 import { SearchOutlined, PhoneOutlined } from "@ant-design/icons";
+import { searchDoctors } from "../../services/contactDoctor";
+import { Navigate, useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
@@ -23,32 +29,95 @@ const layoutStyle = {
   maxWidth: "100%",
 };
 
-// Tạo thêm dữ liệu ví dụ
-const example_data = Array.from({ length: 30 }, (_, i) => ({
-  rating: parseFloat((4 + Math.random() * 1).toFixed(1)),
-  numberOfReviews: Math.floor(Math.random() * 200 + 20),
-  doctorName: `BS. Demo ${i + 1}`,
-  specialty: ["Tim mạch", "Nội tiết", "Tai mũi họng", "Da liễu"][i % 4],
-  contact: `09${Math.floor(10000000 + Math.random() * 90000000)}`,
-}));
-
 export default function ContactDoctor() {
   const isMobile = useIsMobile();
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 3; // số bác sĩ trên mỗi trang
+  const [currentPage, setCurrentPage] = useState(1); // UI page (1-based)
+  const [pageSize] = useState(6);
+  const [doctors, setDoctors] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  // optional session header if your backend needs it
+  const sessionId = sessionStorage.getItem("session_id") || "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
 
-  const filteredData = example_data.filter(
-    (d) =>
-      d.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchDoctors = useCallback(
+    async (page = 1, keyword = "") => {
+      setLoading(true);
+      try {
+        // backend expects 0-based page index
+        const resp = await searchDoctors({
+          field: "",
+          keyword: keyword || "",
+          roleId: 2, // bác sĩ
+          page: 0,
+          size: pageSize,
+          sessionId,
+        });
+
+        // defensive: support a few possible shapes
+        const payload = resp ?? {};
+        const items = payload.items ?? payload.data?.items ?? [];
+        const totalElements =
+          payload.totalElements ?? payload.data?.totalElements ?? items.length;
+
+        const mapped = (items || []).map((it) => {
+          // fields may vary, so normalize
+          const id =
+            it.id ?? it.user?.id ?? `${Math.random().toString(36).slice(2, 9)}`;
+          const name =
+            it.name ??
+            it.fullName ??
+            it.user?.name ??
+            it.displayName ??
+            "Không tên";
+          const specialty =
+            it.specialty ?? it.title ?? it.profession ?? "Bác sĩ đa khoa";
+          const phone =
+            it.phone ?? it.phoneNumber ?? it.user?.phone ?? "Không có";
+          const profileUrl = it.profileUrl ?? it.user?.profileUrl ?? undefined;
+          const rating = typeof it.rating === "number" ? it.rating : 4.2;
+          const numberOfReviews =
+            typeof it.numberOfReviews === "number"
+              ? it.numberOfReviews
+              : Math.floor(Math.random() * 50 + 5);
+
+          return {
+            id,
+            doctorName: name,
+            specialty,
+            contact: phone,
+            profileUrl,
+            rating,
+            numberOfReviews,
+          };
+        });
+
+        setDoctors(mapped);
+        setTotal(totalElements);
+      } catch (err) {
+        console.error("fetchDoctors unexpected error:", err);
+        message.error(
+          "Lỗi khi tải danh sách bác sĩ. Kiểm tra console để biết thêm chi tiết."
+        );
+        setDoctors([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pageSize, sessionId]
   );
 
-  // Lấy dữ liệu cho trang hiện tại
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // initial load and when page/search change
+  useEffect(() => {
+    fetchDoctors(currentPage, searchTerm);
+  }, [currentPage, searchTerm, fetchDoctors]);
+
+  const onSearchClick = () => {
+    setCurrentPage(1);
+    fetchDoctors(1, searchTerm);
+  };
 
   return (
     <Layout style={layoutStyle}>
@@ -58,6 +127,7 @@ export default function ContactDoctor() {
           style={{ fontWeight: "bold", textAlign: "center", marginBottom: 24 }}>
           Tìm kiếm Bác sĩ & Chuyên gia Y tế
         </Title>
+
         <Text
           type="secondary"
           style={{
@@ -75,8 +145,7 @@ export default function ContactDoctor() {
           style={{
             margin: "auto",
             width: isMobile ? "100%" : "fit-content",
-            boxShadow:
-              "0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19)",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.12)",
             marginBottom: 32,
           }}>
           <Space.Compact style={{ width: "100%" }} size="large">
@@ -93,8 +162,9 @@ export default function ContactDoctor() {
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
-                setCurrentPage(1); // reset về trang 1 khi tìm kiếm
+                setCurrentPage(1);
               }}
+              onPressEnter={onSearchClick}
               autoFocus={true}
               autoComplete="off"
             />
@@ -108,59 +178,66 @@ export default function ContactDoctor() {
                 color: "black",
                 border: "none",
               }}
-              onClick={() => {}}>
+              onClick={onSearchClick}>
               Tìm kiếm
             </Button>
           </Space.Compact>
         </Card>
 
         {/* Doctor List */}
-        <Row gutter={[16, 16]}>
-          {paginatedData.length === 0 ? (
-            <Col span={24}>
-              <Text type="secondary">Không tìm thấy bác sĩ phù hợp.</Text>
-            </Col>
-          ) : (
-            paginatedData.map((doctor, idx) => (
-              <Col xs={24} sm={12} md={8} key={idx}>
-                <Card
-                  hoverable
-                  title={doctor.doctorName}
-                  extra={
-                    <Rate disabled allowHalf defaultValue={doctor.rating} />
-                  }>
-                  <Text strong>Chuyên khoa: </Text>
-                  <Text>{doctor.specialty}</Text>
-                  <br />
-                  <Text strong>Đánh giá: </Text>
-                  <Text>
-                    {doctor.rating} ({doctor.numberOfReviews} reviews)
-                  </Text>
-                  <br />
-                  <Text strong>Liên hệ: </Text>
-                  <Text>
-                    <PhoneOutlined /> {doctor.contact}
-                  </Text>
-                  <br />
-                  <Button
-                    type="primary"
-                    style={{
-                      marginTop: 8,
-                      backgroundColor: "#13ec5b",
-                      color: "black",
-                      fontWeight: "bold",
-                      border: "none",
-                    }}>
-                    Đặt lịch hẹn
-                  </Button>
-                </Card>
+        <Spin spinning={loading}>
+          <Row gutter={[16, 16]}>
+            {!loading && doctors.length === 0 ? (
+              <Col span={24}>
+                <Empty description="Không tìm thấy bác sĩ phù hợp." />
               </Col>
-            ))
-          )}
-        </Row>
+            ) : (
+              doctors.map((doctor) => (
+                <Col xs={24} sm={12} md={8} key={doctor.id}>
+                  <Card hoverable title={doctor.doctorName}>
+                    <Text strong>Chuyên khoa: </Text>
+                    <Text>{doctor.specialty}</Text>
+                    <br />
+                    <Text strong>Đánh giá: </Text>
+                    <Rate allowHalf disabled value={doctor.rating} />
+                    <Text style={{ marginLeft: 6 }}>
+                      ({doctor.numberOfReviews})
+                    </Text>
+                    <br />
+                    <Text strong>Liên hệ: </Text>
+                    <Text>
+                      <PhoneOutlined /> {doctor.contact}
+                    </Text>
+                    <br />
+                    <Button
+                      type="primary"
+                      style={{
+                        marginTop: 8,
+                        backgroundColor: "#13ec5b",
+                        color: "black",
+                        fontWeight: "bold",
+                        border: "none",
+                      }}
+                      onClick={() => {
+                        navigate("/user_family/appointments", {
+                          state: {
+                            openModal: true,
+                            doctorId: doctor.id,
+                            doctorName: doctor.doctorName,
+                          },
+                        });
+                      }}>
+                      Đặt lịch hẹn
+                    </Button>
+                  </Card>
+                </Col>
+              ))
+            )}
+          </Row>
+        </Spin>
 
         {/* Pagination */}
-        {filteredData.length > pageSize && (
+        {total > pageSize && (
           <div
             style={{
               display: "flex",
@@ -170,7 +247,7 @@ export default function ContactDoctor() {
             <Pagination
               current={currentPage}
               pageSize={pageSize}
-              total={filteredData.length}
+              total={total}
               onChange={(page) => setCurrentPage(page)}
             />
           </div>

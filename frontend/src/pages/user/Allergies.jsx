@@ -9,7 +9,7 @@ const layoutStyle = {
   width: "100%",
   maxWidth: "100%",
 };
-
+//BỎ mức độ
 const example_data = [
   {
     id: "3123410288",

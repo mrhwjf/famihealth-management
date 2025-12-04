@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+
 import {
   Layout,
   Card,
@@ -12,7 +13,9 @@ import {
   Col,
   Space,
   Button,
+  Dropdown,
 } from "antd";
+import { FilterOutlined } from "@ant-design/icons";
 import useIsMobile from "../../hooks/useIsMobile";
 
 dayjs.extend(relativeTime);
@@ -26,20 +29,11 @@ const layoutStyle = {
   maxWidth: "100%",
 };
 
-// sample data shape:
-// {
-//   id: "evt-1",
-//   memberId: "member-01",
-//   vaccineId: "vax-009",
-//   vaccineName: "Hepatitis B (HBV)",
-//   administered_date: "2025-06-10",
-//   interval_days: 365, // days until next due (optional)
-//   note: "First dose"
-// }
+// sample data
 const SAMPLE_DATA = [
   {
     id: "1",
-    memberId: "3123410288",
+    memberName: "Nguyễn Hoàng Phương",
     vaccineId: "V-101",
     vaccineName: "MMR (Measles, Mumps, Rubella)",
     administered_date: "2024-11-10",
@@ -48,7 +42,7 @@ const SAMPLE_DATA = [
   },
   {
     id: "2",
-    memberId: "3123410289",
+    memberName: "Nguyễn Hữu Phong",
     vaccineId: "V-102",
     vaccineName: "Tetanus (Td)",
     administered_date: "2023-05-20",
@@ -56,7 +50,7 @@ const SAMPLE_DATA = [
   },
   {
     id: "3",
-    memberId: "3123410290",
+    memberName: "Đõ Thiên Phú",
     vaccineId: "V-201",
     vaccineName: "Influenza (Annual)",
     administered_date: "2025-09-01",
@@ -64,22 +58,66 @@ const SAMPLE_DATA = [
   },
   {
     id: "4",
-    memberId: "3123410290",
+    memberName: "Hồ Thanh Thái",
     vaccineId: "V-203",
     vaccineName: "Covid-19 Booster (2nd Dose)",
     administered_date: "2025-09-01",
     interval_days: 365,
   },
+  {
+    id: "5",
+    memberName: "Khanh",
+    vaccineId: "V-204",
+    vaccineName: "Blablabla Vaccine",
+    administered_date: "2025-09-01",
+    interval_days: 365,
+  },
+  {
+    id: "6",
+    memberName: "An",
+    vaccineId: "V-204",
+    vaccineName: "Blablabla Vaccine",
+    administered_date: "2025-09-01",
+    interval_days: 365,
+  },
+  {
+    id: "7",
+    memberName: "Huy",
+    vaccineId: "V-204",
+    vaccineName: "Blablabla Vaccine",
+    administered_date: "2025-09-01",
+    interval_days: 365,
+  },
+  {
+    id: "8",
+    memberName: "Danh",
+    vaccineId: "V-204",
+    vaccineName: "Blablabla Vaccine",
+    administered_date: "2025-09-01",
+    interval_days: 365,
+  },
+  {
+    id: "9",
+    memberName: "Đạt",
+    vaccineId: "V-204",
+    vaccineName: "Blablabla Vaccine",
+    administered_date: "2025-09-01",
+    interval_days: 365,
+  },
+  // add more as needed
 ];
 
 export default function Vaccinations({ initialData = null }) {
   const isMobile = useIsMobile();
   const [data, setData] = useState(initialData ?? SAMPLE_DATA);
 
-  // compute next_due_date from administered_date + interval_days (fallback: null)
+  // selected vaccine filter (null = all)
+  const [selectedVaccine, setSelectedVaccine] = useState(null);
+
+  // compute enriched rows (administered dayjs, nextDue, status)
   const enriched = useMemo(
     () =>
-      data.map((r) => {
+      (data || []).map((r) => {
         const administered = r.administered_date
           ? dayjs(r.administered_date)
           : null;
@@ -95,23 +133,59 @@ export default function Vaccinations({ initialData = null }) {
         else status = "ok";
 
         return {
-          ...r, //Tên biến đại diện cho từng bản ghi trong mảng data
-          administered: administered, // trả về ngày đã tiêm dưới dạng đối tượng dayjs
-          nextDue, // trả về ngày tiêm tiếp theo dưới dạng đối tượng dayjs
-          status, // trạng thái dựa trên ngày tiêm tiếp theo so với ngày hiện tại
+          ...r,
+          administered,
+          nextDue,
+          status,
         };
       }),
     [data]
   );
 
+  // distinct vaccine options (order preserved)
+  const vaccineOptions = useMemo(() => {
+    const seen = new Set();
+    const opts = [];
+    for (const r of data) {
+      if (!r.vaccineName) continue;
+      if (!seen.has(r.vaccineName)) {
+        seen.add(r.vaccineName);
+        opts.push(r.vaccineName);
+      }
+    }
+    return opts;
+  }, [data]);
+
+  // Dropdown menu items + click handler
+  const menu = {
+    items: [
+      { key: "all", label: "All vaccines" },
+      ...vaccineOptions.map((v) => ({ key: v, label: v })),
+    ],
+    onClick: ({ key }) => {
+      if (key === "all") setSelectedVaccine(null);
+      else setSelectedVaccine(key);
+    },
+  };
+
+  // filtered list used by the Table / mobile cards
+  const filteredEnriched = useMemo(() => {
+    if (!selectedVaccine) return enriched;
+    return enriched.filter((r) => r.vaccineName === selectedVaccine);
+  }, [enriched, selectedVaccine]);
+
   const columns = [
     {
-      title: "Member ID",
-      dataIndex: "memberId",
-      key: "memberId",
-      width: 110,
-      sorter: (a, b) => (a.memberId > b.memberId ? 1 : -1),
-      render: (t) => <Text>{t}</Text>,
+      title: "Member",
+      dataIndex: "memberName",
+      key: "memberName",
+      width: 180,
+      sorter: (a, b) => {
+        const aa = (a.memberName || a.memberId || "").toLowerCase();
+        const bb = (b.memberName || b.memberId || "").toLowerCase();
+        return aa > bb ? 1 : -1;
+      },
+      render: (_t, row) => <Text>{row.memberName ?? row.memberId ?? "—"}</Text>,
     },
     {
       title: "Vaccine ID",
@@ -143,7 +217,7 @@ export default function Vaccinations({ initialData = null }) {
       key: "nextDue",
       width: 140,
       sorter: (a, b) => (a.nextDue?.unix() || 0) - (b.nextDue?.unix() || 0),
-      render: (d, row) =>
+      render: (d) =>
         d ? (
           <div>
             <div>{dayjs(d).format("DD/MM/YYYY")}</div>
@@ -155,33 +229,22 @@ export default function Vaccinations({ initialData = null }) {
           <Text type="secondary">N/A</Text>
         ),
     },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 110,
-      filters: [
-        { text: "Overdue", value: "overdue" },
-        { text: "Due soon", value: "due_soon" },
-        { text: "OK", value: "ok" },
-        { text: "Unknown", value: "unknown" },
-      ],
-      onFilter: (value, record) => record.status === value,
-      render: (s) => {
-        if (s === "overdue") return <Tag color="red">Overdue</Tag>;
-        if (s === "due_soon") return <Tag color="orange">Due soon</Tag>;
-        if (s === "ok") return <Tag color="green">OK</Tag>;
-        return <Tag color="default">Unknown</Tag>;
-      },
-    },
   ];
 
-  // mobile card layout
+  // status tag renderer (used in mobile card)
+  function renderStatusTag(status) {
+    if (status === "overdue") return <Tag color="red">Overdue</Tag>;
+    if (status === "due_soon") return <Tag color="orange">Due soon</Tag>;
+    if (status === "ok") return <Tag color="green">OK</Tag>;
+    return <Tag color="default">Unknown</Tag>;
+  }
+
+  // mobile card
   const MobileCard = ({ item }) => (
     <Card type="inner" style={{ marginBottom: 12 }}>
       <Row justify="space-between" align="middle">
         <Col>
-          <Text code>{item.memberId}</Text> —{" "}
+          <Text code>{item.memberName ?? item.memberId}</Text> —{" "}
           <Text strong>{item.vaccineName}</Text>
           <div style={{ marginTop: 6 }}>
             <div>
@@ -216,13 +279,6 @@ export default function Vaccinations({ initialData = null }) {
     </Card>
   );
 
-  function renderStatusTag(status) {
-    if (status === "overdue") return <Tag color="red">Overdue</Tag>;
-    if (status === "due_soon") return <Tag color="orange">Due soon</Tag>;
-    if (status === "ok") return <Tag color="green">OK</Tag>;
-    return <Tag>Unknown</Tag>;
-  }
-
   return (
     <Layout style={layoutStyle}>
       <Card style={{ marginBottom: 16 }}>
@@ -240,19 +296,33 @@ export default function Vaccinations({ initialData = null }) {
       </Card>
 
       <Card>
-        {enriched.length === 0 ? (
+        <Row align="middle" style={{ marginBottom: 16 }}>
+          <Space>
+            <Dropdown menu={menu} placement="bottomLeft" trigger={["click"]}>
+              <Button icon={<FilterOutlined />}>
+                {selectedVaccine ?? "Lọc (All vaccines)"}
+              </Button>
+            </Dropdown>
+
+            {/* optional: quick clear button */}
+            {selectedVaccine && (
+              <Button onClick={() => setSelectedVaccine(null)}>Clear</Button>
+            )}
+          </Space>
+        </Row>
+
+        {filteredEnriched.length === 0 ? (
           <Empty description="Chưa có dữ liệu tiêm chủng" />
         ) : isMobile ? (
-          // mobile: show stacked cards
           <div>
-            {enriched.map((it) => (
+            {filteredEnriched.map((it) => (
               <MobileCard key={it.id} item={it} />
             ))}
           </div>
         ) : (
           <Table
             rowKey="id"
-            dataSource={enriched}
+            dataSource={filteredEnriched}
             columns={columns}
             pagination={{ pageSize: 8 }}
             bordered
