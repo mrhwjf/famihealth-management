@@ -17,6 +17,7 @@ const UserDropdown = () => {
 			key: "2",
 			label: "Logout",
 			icon: <LogoutOutlined />,
+			style: { backgroundColor: "#ff4d4f", color: "white" },
 			onClick: () => {
 				console.log("Logout");
 			},
