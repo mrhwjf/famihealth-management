@@ -17,4 +17,6 @@ public interface AllergyService {
 	AllergyDto getAllergyById(String sessionId, Integer allergyId);
 
 	List<AllergyDto> getAllergiesByMemberId(String sessionId, Integer memberId);
+
+	List<AllergyDto> getAllergiesByFamilyId(String sessionId, Integer familyId);
 }

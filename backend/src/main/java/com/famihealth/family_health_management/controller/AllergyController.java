@@ -84,4 +84,13 @@ public class AllergyController {
 		List<AllergyDto> allergies = allergyService.getAllergiesByMemberId(sessionId, memberId);
 		return ResponseEntity.ok(ApiResponse.success("OK", allergies));
 	}
+
+	@GetMapping("/families/{familyId}/allergies")
+	@Operation(summary = "Liệt kê dị ứng của gia đình", description = "Truy xuất danh sách đầy đủ các dị ứng của tất cả thành viên trong một gia đình dựa trên mã phiên đăng nhập.")
+	public ResponseEntity<ApiResponse<List<AllergyDto>>> getAllergiesByFamily(
+			@RequestHeader(name = SESSION_HEADER) String sessionId,
+			@PathVariable Integer familyId) {
+		List<AllergyDto> allergies = allergyService.getAllergiesByFamilyId(sessionId, familyId);
+		return ResponseEntity.ok(ApiResponse.success("OK", allergies));
+	}
 }

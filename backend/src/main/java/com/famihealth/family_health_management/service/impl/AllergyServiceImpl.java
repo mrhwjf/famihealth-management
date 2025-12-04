@@ -16,6 +16,8 @@ import com.famihealth.family_health_management.mapper.AllergyMapper;
 import com.famihealth.family_health_management.model.Allergy;
 import com.famihealth.family_health_management.model.FamilyMember;
 import com.famihealth.family_health_management.repository.AllergyRepository;
+import com.famihealth.family_health_management.repository.FamilyAccessRepository;
+import com.famihealth.family_health_management.repository.FamilyRepository;
 import com.famihealth.family_health_management.service.AllergyService;
 import com.famihealth.family_health_management.service.SessionService;
 import com.famihealth.family_health_management.service.helper.FamilyMemberAccessValidator;
@@ -29,6 +31,8 @@ public class AllergyServiceImpl implements AllergyService {
 
 	private final SessionService sessionService;
 	private final AllergyRepository allergyRepository;
+	private final FamilyRepository familyRepository;
+	private final FamilyAccessRepository familyAccessRepository;
 	private final AllergyMapper allergyMapper;
 	private final FamilyMemberAccessValidator accessValidator;
 
@@ -90,6 +94,18 @@ public class AllergyServiceImpl implements AllergyService {
 				.toList();
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public List<AllergyDto> getAllergiesByFamilyId(String sessionId, Integer familyId) {
+		SessionData session = requireSession(sessionId);
+		if (!validateFamilyAccess(familyId, session.getUserId())) {
+			throw new ForbiddenException("Access to family allergies is denied");
+		}
+		return allergyRepository.findByFamilyMember_Family_Id(familyId).stream()
+				.map(allergyMapper::toDto)
+				.toList();
+	}
+
 	private SessionData requireSession(String sessionId) {
 		Integer requesterId = sessionService.getUserId(sessionId)
 				.orElseThrow(() -> new ForbiddenException("Invalid session"));
@@ -112,5 +128,14 @@ public class AllergyServiceImpl implements AllergyService {
 			throw new BadRequestException("Allergy is not linked to a valid family member");
 		}
 		return member;
+	}
+
+	@Transactional(readOnly = true)
+	private boolean validateFamilyAccess(Integer familyId, Integer requesterId) {
+		if (requesterId == null) {
+			return false;
+		}
+
+		return familyAccessRepository.existsByFamilyIdAndUserId(familyId, requesterId);
 	}
 }
