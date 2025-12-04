@@ -31,6 +31,7 @@ import com.famihealth.family_health_management.model.User;
 import com.famihealth.family_health_management.repository.AppointmentRepository;
 import com.famihealth.family_health_management.repository.FamilyAccessRepository;
 import com.famihealth.family_health_management.repository.FamilyMemberRepository;
+import com.famihealth.family_health_management.repository.FamilyRepository;
 import com.famihealth.family_health_management.repository.MemberAccessRepository;
 import com.famihealth.family_health_management.repository.UserRepository;
 import com.famihealth.family_health_management.service.AppointmentService;
@@ -49,6 +50,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 	private static final String ROLE_DOCTOR = "DOCTOR";
 
 	private final AppointmentRepository appointmentRepository;
+	private final FamilyRepository familyRepository;
 	private final FamilyMemberRepository familyMemberRepository;
 	private final FamilyAccessRepository familyAccessRepository;
 	private final MemberAccessRepository memberAccessRepository;
@@ -209,15 +211,17 @@ public class AppointmentServiceImpl implements AppointmentService {
 		SessionData session = requireSession(sessionId);
 		ensureSupportedRole(session);
 
+		Family family = familyRepository.findByCreator_Id(session.getUserId());
+
 		List<FamilyMember> familyMembers = List.of();
 		List<User> doctors = List.of();
 
 		if (isFamily(session)) {
 			// Family: get all family members for this user
-			familyMembers = familyMemberRepository.findByFamily_Id(session.getUserId());
+			familyMembers = familyMemberRepository.findByFamily_Id(family.getId());
 
 			// Doctors linked to this family
-			doctors = userRepository.findDistinctByFamilyAccesses_FamilyIdAndRole_Name(session.getUserId(),
+			doctors = userRepository.findDistinctByFamilyAccesses_FamilyIdAndRole_Name(family.getId(),
 					ROLE_DOCTOR);
 		} else if (isDoctor(session)) {
 			// Doctor: get all patients linked to this doctor

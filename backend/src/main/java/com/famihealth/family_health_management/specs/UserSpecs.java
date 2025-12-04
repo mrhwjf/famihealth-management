@@ -9,8 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.famihealth.family_health_management.dto.request.user.UserFilterRequest;
+import com.famihealth.family_health_management.model.DoctorProfile;
 import com.famihealth.family_health_management.model.Role;
 import com.famihealth.family_health_management.model.Role_;
+import com.famihealth.family_health_management.model.Specialization;
 import com.famihealth.family_health_management.model.User;
 import com.famihealth.family_health_management.model.User_;
 
@@ -32,6 +34,13 @@ public class UserSpecs {
 						break;
 					case "phone":
 						predicates.add(cb.like(cb.lower(root.get(User_.phone)), pattern));
+					case "specialization":
+						Join<User, DoctorProfile> dpJoin = root.join(User_.doctorProfile, JoinType.LEFT);
+
+						Join<DoctorProfile, Specialization> specJoin = dpJoin.join("specialization", JoinType.LEFT);
+
+						predicates.add(
+								cb.like(cb.lower(specJoin.get("name")), pattern));
 						break;
 				}
 			}
