@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Calendar, Badge, Modal, Typography, Button, Form, Select, DatePicker, Input, Row, Col, Alert, message, Tag } from 'antd';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Table, Modal, Typography, Button, Form, Select, DatePicker, Input, Row, Col, message, Tag, Space, Popconfirm } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import { searchAppointments, createAppointment, updateAppointment, deleteAppointment, completeAppointment } from '../../../services/appointmentsService.js';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 
@@ -9,187 +10,241 @@ dayjs.locale('vi'); // Set locale to Vietnamese for dates
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// --- DỮ LIỆU GIẢ LẬP THEO ĐÚNG CẤU TRÚC DATABASE ---
-const mockAppointments = [
-  {
-    id: 1,
-    patient_id: 401,
-    patient_name: 'Nguyễn Thị Bích',
-    doctor_id: 202,
-    appointment_datetime: '2025-10-20T10:00:00',
-    location: 'Phòng khám A, Bệnh viện Y Dược',
-    status: 'APPOINTED',
-    notes: 'Tái khám định kỳ.',
-  },
-  {
-    id: 2,
-    patient_id: 403,
-    patient_name: 'Lê Thu Trang',
-    doctor_id: 202,
-    appointment_datetime: '2025-10-20T14:30:00',
-    location: 'Online - Video Call',
-    status: 'COMPLETED',
-    notes: 'Tư vấn về kết quả xét nghiệm.',
-  },
-  {
-    id: 3,
-    patient_id: 401,
-    patient_name: 'Nguyễn Thị Bích',
-    doctor_id: 202,
-    appointment_datetime: '2025-10-22T09:00:00',
-    location: 'Phòng khám A, Bệnh viện Y Dược',
-    status: 'CANCELLED',
-    notes: 'Bệnh nhân báo bận, đã hủy.',
-  },
-];
-
-// Giả lập danh sách bệnh nhân của bác sĩ này
-const mockPatients = [
-    { id: 401, name: 'Nguyễn Thị Bích' },
-    { id: 403, name: 'Lê Thu Trang' },
-];
-// --- KẾT THÚC DỮ LIỆU GIẢ LẬP ---
+// Status map theo SQL
+const STATUS_LABEL = {
+    PENDING: 'Chờ xử lý',
+    SCHEDULED: 'Đã lên lịch',
+    CANCELLED: 'Đã hủy',
+    COMPLETED: 'Hoàn thành',
+};
 
 
 const AppointmentPage = () => {
-    const [appointments, setAppointments] = useState([]);
-    const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
-    const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-    const [selectedAppointment, setSelectedAppointment] = useState(null);
+        const [appointments, setAppointments] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [page, setPage] = useState({ page: 0, size: 10, totalElements: 0 });
+        const [sort, setSort] = useState(['appointment_datetime,DESC']);
+        const [formVisible, setFormVisible] = useState(false);
+        const [detailVisible, setDetailVisible] = useState(false);
+        const [editing, setEditing] = useState(null);
+        const [form] = Form.useForm();
 
-    const [addForm] = Form.useForm();
+        const fetchAppointments = useCallback(async (p = page.page, s = page.size, sortBy = sort, filters = {}) => {
+            try {
+                setLoading(true);
+                const resp = await searchAppointments({ pageable: { page: p, size: s, sort: sortBy }, filters, headerName: 'X-Session-Id' });
+                const payload = resp?.data || { items: [], content: [], page: 0, size: s, totalElements: 0 };
+                const rows = Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.content) ? payload.content : []);
+                const mapped = rows.map(a => ({
+                    id: a.id,
+                    patient_id: a.patientId ?? a.patient_id,
+                    doctor_id: a.doctorId ?? a.doctor_id,
+                    issuer_id: a.issuerId ?? a.issuer_id,
+                    appointment_datetime: a.appointmentDatetime ?? a.appointment_datetime,
+                    reason: a.reason ?? '',
+                    location: a.location ?? '',
+                    status: a.status,
+                    notes: a.notes ?? '',
+                    patient_name: a.patientName ?? a.patient_name, // nếu server trả thêm
+                }));
+                setAppointments(mapped);
+                setPage({ page: payload.page ?? payload.number ?? p, size: payload.size ?? s, totalElements: payload.totalElements ?? mapped.length });
+            } catch (e) {
+                message.error(e?.message || 'Không tải được danh sách lịch hẹn');
+                setAppointments([]);
+                setPage({ page: p, size: s, totalElements: 0 });
+            } finally {
+                setLoading(false);
+            }
+        }, [page.page, page.size, sort]);
 
-    const statusColorMap = useMemo(() => ({
-        SCHEDULED: 'processing',
-        APPOINTED: 'processing',
-        COMPLETED: 'success',
-        CANCELLED: 'error'
-    }), []);
+        useEffect(() => {
+            fetchAppointments(0, page.size, sort);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
 
-    const statusLabelMap = useMemo(() => ({
-        SCHEDULED: 'Đã lên lịch',
-        APPOINTED: 'Hẹn',
-        COMPLETED: 'Hoàn thành',
-        CANCELLED: 'Đã hủy'
-    }), []);
+        const openAddModal = () => {
+            setEditing(null);
+            form.resetFields();
+            setFormVisible(true);
+        };
 
-    useEffect(() => {
-        // Giả lập fetch data
-        setAppointments(mockAppointments);
-    }, []);
+        const openEditModal = (record) => {
+            setEditing(record);
+            form.setFieldsValue({
+                patient_id: record.patient_id,
+                appointment_datetime: record.appointment_datetime ? dayjs(record.appointment_datetime) : null,
+                location: record.location,
+                reason: record.reason,
+                notes: record.notes,
+                status: record.status,
+            });
+            setFormVisible(true);
+        };
 
-    const handleShowDetail = useCallback((appointment) => {
-        setSelectedAppointment(appointment);
-        setIsDetailModalVisible(true);
-    }, []);
+        const handleFormOk = async () => {
+            try {
+                const values = await form.validateFields();
+                const payload = {
+                    patientId: values.patient_id,
+                    appointmentDatetime: values.appointment_datetime?.toISOString(),
+                    location: values.location,
+                    reason: values.reason,
+                    notes: values.notes,
+                    status: values.status || 'PENDING',
+                };
+                setLoading(true);
+                if (editing) {
+                    await updateAppointment({ appointmentId: editing.id, data: payload, headerName: 'X-Session-Id' });
+                    message.success('Cập nhật lịch hẹn thành công');
+                } else {
+                    await createAppointment({ data: payload, headerName: 'X-Session-Id' });
+                    message.success('Tạo lịch hẹn mới thành công');
+                }
+                setFormVisible(false);
+                fetchAppointments(page.page, page.size, sort);
+            } catch (e) {
+                message.error(e?.message || 'Lưu lịch hẹn thất bại');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    const handleAddOk = () => {
-        addForm.validateFields().then(values => {
-            const patient = mockPatients.find(p => p.id === values.patient_id);
-            const newAppointment = {
-                id: Date.now(),
-                ...values,
-                appointment_datetime: values.appointment_datetime.toISOString(),
-                patient_name: patient.name,
-                status: 'SCHEDULED'
-            };
-            setAppointments(prev => [...prev, newAppointment]);
-            message.success('Tạo lịch hẹn mới thành công!');
-            setIsAddModalVisible(false);
-            addForm.resetFields();
-        });
-    };
+        const handleDelete = async (record) => {
+            try {
+                setLoading(true);
+                await deleteAppointment({ appointmentId: record.id, headerName: 'X-Session-Id' });
+                message.success('Đã xoá lịch hẹn');
+                fetchAppointments(page.page, page.size, sort);
+            } catch (e) {
+                message.error(e?.message || 'Xoá lịch hẹn thất bại');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-    // Hàm render các cuộc hẹn trên từng ngày của lịch
-    const dateCellRender = useCallback((value) => {
-        const dateStr = value.format('YYYY-MM-DD');
-        const listData = appointments.filter(app => dayjs(app.appointment_datetime).format('YYYY-MM-DD') === dateStr);
+        const handleComplete = async (record) => {
+            try {
+                setLoading(true);
+                await completeAppointment({ appointmentId: record.id, headerName: 'X-Session-Id' });
+                message.success('Đã đánh dấu hoàn tất lịch hẹn');
+                fetchAppointments(page.page, page.size, sort);
+            } catch (e) {
+                message.error(e?.message || 'Đánh dấu hoàn tất thất bại');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        return (
-            <ul className="events" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-                {listData.map(item => {
-                    const statusColor = statusColorMap[item.status] || 'default';
-                    const time = item.appointment_datetime ? dayjs(item.appointment_datetime).format('HH:mm') : '';
-                    // Use a button (link style) for accessibility (keyboard focusable)
-                    return (
-                        <li key={item.id} style={{ marginBottom: 6 }}>
-                            <Button
-                                type="link"
-                                onClick={() => handleShowDetail(item)}
-                                style={{ padding: 0 }}
-                                aria-label={`Mở chi tiết cuộc hẹn ${item.patient_name} lúc ${time}`}
-                            >
-                                <Badge status={statusColor} text={`${time} - ${item.patient_name}`} />
-                            </Button>
-                        </li>
-                    )
-                })}
-            </ul>
-        );
-    }, [appointments, handleShowDetail, statusColorMap]);
+    const columns = [
+      { title: 'Bệnh nhân', dataIndex: 'patient_name', key: 'patient_name' },
+      { title: 'Thời gian', dataIndex: 'appointment_datetime', key: 'appointment_datetime', render: (v) => v ? dayjs(v).format('HH:mm, DD/MM/YYYY') : '-' },
+      { title: 'Lý do', dataIndex: 'reason', key: 'reason' },
+      { title: 'Địa điểm', dataIndex: 'location', key: 'location' },
+      { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: (s) => <Tag>{STATUS_LABEL[s] || s}</Tag> },
+      { title: 'Thao tác', key: 'action', render: (_, record) => (
+        <Space>
+          <Button size="small" onClick={() => { setDetailVisible(true); setEditing(record); }}>Chi tiết</Button>
+          <Button size="small" onClick={() => openEditModal(record)}>Sửa</Button>
+          <Popconfirm title="Xoá lịch hẹn này?" onConfirm={() => handleDelete(record)}>
+            <Button size="small" danger>Xoá</Button>
+          </Popconfirm>
+          <Button size="small" onClick={() => handleComplete(record)}>Hoàn tất</Button>
+        </Space>
+      ) },
+    ];
 
     return (
         <div>
-            <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-                <Col>
-                    <Title level={2}>Lịch làm việc</Title>
-                </Col>
-                <Col>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsAddModalVisible(true)}>
-                        Thêm lịch hẹn mới
-                    </Button>
-                </Col>
-            </Row>
+                        <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+                                <Col>
+                                        <Title level={2}>Cuộc hẹn</Title>
+                                </Col>
+                                <Col>
+                                        <Button type="primary" icon={<PlusOutlined />} onClick={openAddModal}>Thêm lịch hẹn mới</Button>
+                                </Col>
+                        </Row>
 
-            <Calendar dateCellRender={dateCellRender} />
+                        <Table
+                            columns={columns}
+                            dataSource={appointments}
+                            loading={loading}
+                            rowKey="id"
+                            pagination={{
+                                current: (page.page || 0) + 1,
+                                pageSize: page.size || 10,
+                                total: page.totalElements || 0,
+                                onChange: (p, ps) => {
+                                    fetchAppointments(p - 1, ps, sort);
+                                },
+                            }}
+                            onChange={(pagination, filters, sorter) => {
+                                if (sorter && sorter.field) {
+                                    const dir = sorter.order === 'ascend' ? 'ASC' : 'DESC';
+                                    const s = [`${sorter.field},${dir}`];
+                                    setSort(s);
+                                    fetchAppointments((pagination.current || 1) - 1, pagination.pageSize || page.size, s);
+                                }
+                            }}
+                        />
 
-            {/* Modal xem chi tiết cuộc hẹn */}
-            <Modal
-                title="Chi tiết cuộc hẹn"
-                visible={isDetailModalVisible}
-                onCancel={() => setIsDetailModalVisible(false)}
-                footer={[<Button key="close" onClick={() => setIsDetailModalVisible(false)}>Đóng</Button>]}
-            >
-                {selectedAppointment && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        <Text><strong>Bệnh nhân:</strong> {selectedAppointment.patient_name}</Text>
-                        <Text><strong>Thời gian:</strong> {selectedAppointment.appointment_datetime ? dayjs(selectedAppointment.appointment_datetime).format('HH:mm, dddd, DD/MM/YYYY') : '--'}</Text>
-                        <Text><strong>Địa điểm:</strong> {selectedAppointment.location}</Text>
-                        <Text><strong>Ghi chú:</strong> {selectedAppointment.notes || <Text type="secondary">--</Text>}</Text>
-                        <div>
-                            <Text strong>Trạng thái: </Text>
-                            <Tag color={statusColorMap[selectedAppointment.status] === 'processing' ? 'blue' : undefined}>
-                                {statusLabelMap[selectedAppointment.status] || selectedAppointment.status}
-                            </Tag>
-                        </div>
-                    </div>
-                )}
-            </Modal>
+                        <Modal
+                            title="Chi tiết cuộc hẹn"
+                            open={detailVisible}
+                            onCancel={() => { setDetailVisible(false); setEditing(null); }}
+                            footer={[<Button key="close" onClick={() => { setDetailVisible(false); setEditing(null); }}>Đóng</Button>]}
+                        >
+                            {editing && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <Text><strong>Bệnh nhân:</strong> {editing.patient_name || editing.patient_id}</Text>
+                                    <Text><strong>Thời gian:</strong> {editing.appointment_datetime ? dayjs(editing.appointment_datetime).format('HH:mm, dddd, DD/MM/YYYY') : '--'}</Text>
+                                    <Text><strong>Địa điểm:</strong> {editing.location}</Text>
+                                    <Text><strong>Lý do:</strong> {editing.reason || <Text type="secondary">--</Text>}</Text>
+                                    <Text><strong>Ghi chú:</strong> {editing.notes || <Text type="secondary">--</Text>}</Text>
+                                    <div>
+                                        <Text strong>Trạng thái: </Text>
+                                        <Tag>{STATUS_LABEL[editing.status] || editing.status}</Tag>
+                                    </div>
+                                </div>
+                            )}
+                        </Modal>
             
-            {/* Modal thêm cuộc hẹn mới */}
-            <Modal
-                title="Thêm lịch hẹn mới"
-                visible={isAddModalVisible}
-                onOk={handleAddOk}
-                onCancel={() => setIsAddModalVisible(false)}
-                okText="Tạo"
-                cancelText="Hủy"
-            >
-                <Form form={addForm} layout="vertical">
-                    <Form.Item name="patient_id" label="Bệnh nhân" rules={[{ required: true }]}>
-                        <Select options={mockPatients.map(p => ({ label: p.name, value: p.id }))} />
-                    </Form.Item>
-                    <Form.Item name="appointment_datetime" label="Thời gian" rules={[{ required: true }]}>
-                        <DatePicker showTime format="YYYY-MM-DD HH:mm" style={{ width: '100%' }}/>
-                    </Form.Item>
-                    <Form.Item name="location" label="Địa điểm" rules={[{ required: true }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="notes" label="Ghi chú">
-                        <TextArea rows={3} />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                        <Modal
+                            title={editing ? 'Sửa lịch hẹn' : 'Thêm lịch hẹn mới'}
+                            open={formVisible}
+                            onOk={handleFormOk}
+                            onCancel={() => setFormVisible(false)}
+                            okText={editing ? 'Lưu' : 'Tạo'}
+                            cancelText="Hủy"
+                            confirmLoading={loading}
+                        >
+                            <Form form={form} layout="vertical">
+                                <Form.Item name="patient_id" label="Bệnh nhân" rules={[{ required: true }]}> 
+                                    {/* TODO: thay bằng options từ getAppointmentFormData nếu backend cung cấp */}
+                                    <Input placeholder="Nhập ID bệnh nhân" />
+                                </Form.Item>
+                                <Form.Item name="appointment_datetime" label="Thời gian" rules={[{ required: true }]}>
+                                    <DatePicker showTime format="YYYY-MM-DD HH:mm" style={{ width: '100%' }} />
+                                </Form.Item>
+                                <Form.Item name="location" label="Địa điểm" rules={[{ required: true }]}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name="reason" label="Lý do">
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name="notes" label="Ghi chú">
+                                    <Input.TextArea rows={3} />
+                                </Form.Item>
+                                <Form.Item name="status" label="Trạng thái">
+                                    <Select options={[
+                                        { label: STATUS_LABEL.PENDING, value: 'PENDING' },
+                                        { label: STATUS_LABEL.SCHEDULED, value: 'SCHEDULED' },
+                                        { label: STATUS_LABEL.CANCELLED, value: 'CANCELLED' },
+                                        { label: STATUS_LABEL.COMPLETED, value: 'COMPLETED' },
+                                    ]} />
+                                </Form.Item>
+                            </Form>
+                        </Modal>
         </div>
     );
 };

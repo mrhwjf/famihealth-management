@@ -7,11 +7,11 @@ import { Outlet } from 'react-router-dom'
 
 const AdminLayout = () => {
 	return (
-		<Layout hasSider>
+		<Layout hasSider style={{ minHeight: '100vh' }}>
 			<AdminMenu />
 			<Layout>
 				<CommonHeader />
-				<Content>
+				<Content className="content overflow-auto">
 					<Outlet />
 				</Content>
 				<CommonFooter />

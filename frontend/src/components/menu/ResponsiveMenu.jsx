@@ -66,10 +66,12 @@ const ResponsiveMenu = ({ items }) => {
 			onCollapse={toggleCollapsed}
 			width={256}
 			style={{
-				minHeight: '100vh',
-				backgroundColor: 'white',
-				display: 'flex',
-				flexDirection: 'column'
+				// Keep sidebar pinned while page/content scrolls
+				position: 'sticky',
+				top: 0,
+				height: '100vh',
+				overflow: 'auto',
+				backgroundColor: 'white'
 			}}
 		>
 			<div style={{ flex: 1, overflowY: 'auto' }}>

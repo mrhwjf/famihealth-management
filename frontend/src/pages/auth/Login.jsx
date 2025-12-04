@@ -1,18 +1,38 @@
 import React from 'react';
-import { Card, Form, Input, Button, Checkbox, Typography, Divider, Space } from 'antd';
+import { Card, Form, Input, Button, Checkbox, Typography, Divider, Space, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { login, getSessionId } from '../../../services/auth/loginService.js';
 
 const { Title, Text } = Typography;
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const onFinish = (values) => {
-    // TODO: integrate with backend auth API
+  const onFinish = async (values) => {
     console.log('Login submitted', values);
-    // placeholder: route to admin dashboard
-    navigate('/admin');
+    try {
+      const resp = await login({
+        phoneOrEmail: values.username,
+        password: values.password,
+      });
+      console.log('Backend response:', resp);
+      console.log('Saved sessionId:', getSessionId());
+      const role = resp?.data?.session?.role || resp?.data?.user?.role?.name;
+      if (role === 'ADMIN') {
+        message.success('Đăng nhập quản trị thành công');
+        navigate('/admin');
+      } else if (role === 'DOCTOR') {
+        message.success('Đăng nhập bác sĩ thành công');
+        navigate('/doctor');
+      } else {
+        message.success('Đăng nhập thành công');
+        navigate('/');
+      }
+    } catch (e) {
+      console.error('Login error:', e);
+      message.error(e?.message || 'Đăng nhập thất bại');
+    }
   };
 
   return (
@@ -44,15 +64,6 @@ const Login = () => {
               Đăng nhập
             </Button>
           </Form.Item>
-
-          <Divider>Hoặc</Divider>
-
-          <Space direction="vertical" style={{ width: '100%' }}>
-            <Button block style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="https://developers.google.com/identity/images/g-logo.png" alt="google" style={{ width: 18, marginRight: 8 }} />
-              Đăng nhập bằng Google
-            </Button>
-          </Space>
         </Form>
         <Text type="secondary">Bạn có thể liên hệ quản trị để được cấp quyền.</Text>
       </Card>

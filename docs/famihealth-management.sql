@@ -17,14 +17,22 @@ CREATE TABLE `users` (
   `profile_url` varchar(255),
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `locked` bool NOT NULL DEFAULT false,
-
-  `auth_provider` enum('GOOGLE') DEFAULT NULL,
-  `provider_id` varchar(255) DEFAULT NULL
+  `locked` bool NOT NULL DEFAULT false
 );
 
+-- Old doctor_profiles table definition
+-- CREATE TABLE `doctor_profiles` (
+--   `doctor_id` int PRIMARY KEY,
+--   `license_number` varchar(255),
+--   `certificate_file_url` varchar(255),
+--   `verified` bool NOT NULL DEFAULT false
+-- );
+
+-- New doctor_profiles table definition
 CREATE TABLE `doctor_profiles` (
   `doctor_id` int PRIMARY KEY,
+  `facility_id` int,
+  `specialization_id` int,
   `license_number` varchar(255),
   `certificate_file_url` varchar(255),
   `verified` bool NOT NULL DEFAULT false
@@ -40,16 +48,34 @@ CREATE TABLE `doctor_verifications` (
   `remarks` text
 );
 
+CREATE TABLE `specializations` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `name` varchar(255) UNIQUE NOT NULL,
+  `description` text
+);
+
+-- Old appointments table definition
+-- CREATE TABLE `appointments` (
+--   `id` int PRIMARY KEY AUTO_INCREMENT,
+--   `issuer_id` int,
+--   `patient_id` int,
+--   `doctor_id` int,
+--   `appointment_datetime` datetime,
+--   `location` varchar(255),
+--   `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
+--   `notes` text
+-- );
+
+-- New appointments table definition
 CREATE TABLE `appointments` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `issuer_id` int,
   `patient_id` int,
   `doctor_id` int,
   `appointment_datetime` datetime,
-  `location` varchar(255),
-  `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
-  `notes` text,
-  `medical_notes` text
+  `reason` varchar(255),
+  `status` enum('PENDING','SCHEDULED','CANCELLED','COMPLETED'),
+  `notes` text
 );
 
 CREATE TABLE `families` (
@@ -126,7 +152,6 @@ CREATE TABLE `medical_records` (
 CREATE TABLE `medical_documents` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `medical_record_id` int,
-  `file_type` varchar(255),
   `file_name` varchar(255),
   `upload_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `file_url` varchar(255)
@@ -308,10 +333,14 @@ INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal
 -- USERS
 -- =========================
 INSERT INTO users (role_id, password_hash, name, phone, email, profile_url, locked) VALUES
-(1, 'admin_hashed_password', 'Admin User', '0123456789', 'admin@example.com', 'http://example.com/profile/admin', false),
-(2, 'doctor_hashed_password', 'Dr. John Doe', '0987654321', 'doctor@example.com', 'http://example.com/profile/doctor', false),
-(3, 'family_hashed_password', 'Family Creator User', '0112233445', 'family@example.com', 'http://example.com/profile/family', false),
-(3, 'member_hashed_password', 'Family Member User', '0223344556', 'member@example.com', 'http://example.com/profile/member', false);
+-- pass: admin_hashed_password
+(1, '$2a$10$5cLEAH6w.aAjapwqTwUoCuTz3AptHBMyBxnJccjSS3IEovdF/S3Sq', 'Admin User', '0123456789', 'admin@example.com', 'http://example.com/profile/admin', false),
+-- pass: doctor_hashed_password
+(2, '$2a$10$1w1WZeFJhuvUSTw.PASfHOov45xWfK2Cggf5izzXeyJoVJCJkIoym', 'Dr. John Doe', '0987654321', 'doctor@example.com', 'http://example.com/profile/doctor', false),
+-- pass: family_hashed_password
+(3, '$2a$10$NHJHvSJuV7C1ErnfAsOMru16sLoVZhbRf6mskO5pZR3xg428crBbu', 'Family Creator User', '0112233445', 'family@example.com', 'http://example.com/profile/family', false),
+-- pass: member_hashed_password
+(3, '$2a$10$/YfGL2VwcqbLCnWh3uJcYuYQ8.xnJHQ3d/JMsUZc.wwRTX0pNrwra', 'Family Member User', '0223344556', 'member@example.com', 'http://example.com/profile/member', false);
 
 -- =========================
 -- DOCTOR_PROFILES
@@ -320,12 +349,45 @@ INSERT INTO doctor_profiles (doctor_id, license_number, certificate_file_url, ve
 (2, 'DOC123456', 'http://example.com/certificates/doc_john_doe.pdf', true);
 
 
+-- =========================
+-- SPECIALIZATIONS
+-- =========================
+INSERT INTO specializations (name, description) VALUES
+('Nội tổng quát', 'Chẩn đoán và điều trị các bệnh lý nội khoa phổ biến'),
+('Nhi khoa', 'Khám và điều trị bệnh cho trẻ sơ sinh, trẻ nhỏ và thanh thiếu niên'),
+('Sản phụ khoa', 'Khám thai, sinh nở, điều trị bệnh lý phụ khoa'),
+('Tai - Mũi - Họng', 'Điều trị các bệnh lý liên quan đến tai, mũi, họng'),
+('Răng - Hàm - Mặt', 'Chăm sóc răng miệng và điều trị các bệnh vùng hàm mặt'),
+('Da liễu', 'Điều trị bệnh lý da, tóc, móng và thẩm mỹ da'),
+('Tim mạch', 'Chẩn đoán và điều trị bệnh lý tim và mạch máu'),
+('Hô hấp', 'Điều trị bệnh phổi và các rối loạn hô hấp'),
+('Tiêu hóa', 'Các bệnh lý dạ dày, ruột, gan, tụy'),
+('Nội tiết - Tiểu đường', 'Chẩn đoán và điều trị các rối loạn nội tiết và bệnh tiểu đường'),
+('Thận - Tiết niệu', 'Điều trị bệnh thận, đường tiết niệu và sinh dục nam'),
+('Cơ xương khớp', 'Khám và điều trị bệnh lý xương khớp, chấn thương thể thao'),
+('Thần kinh', 'Chẩn đoán và điều trị bệnh lý hệ thần kinh'),
+('Ung bướu', 'Khám và điều trị ung thư, khối u lành và ác tính'),
+('Huyết học', 'Điều trị các bệnh lý về máu và rối loạn đông máu'),
+('Ngoại tổng quát', 'Phẫu thuật và hậu phẫu các bệnh lý ngoại khoa'),
+('Chấn thương chỉnh hình', 'Điều trị gãy xương, sai khớp, chấn thương cơ xương khớp'),
+('Nhãn khoa', 'Khám và điều trị bệnh về mắt'),
+('Tâm thần', 'Khám và điều trị rối loạn tâm lý và tâm thần'),
+('Dinh dưỡng', 'Tư vấn và điều trị các vấn đề liên quan đến dinh dưỡng'),
+('Lão khoa', 'Khám và điều trị bệnh cho người cao tuổi'),
+('Truyền nhiễm', 'Điều trị bệnh do vi khuẩn, virus, ký sinh trùng và nấm'),
+('Phục hồi chức năng', 'Vật lý trị liệu và phục hồi sau chấn thương hoặc phẫu thuật');
+
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 
 ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT;
 
 ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL;
+
+ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL;
 
 ALTER TABLE `doctor_verifications` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 

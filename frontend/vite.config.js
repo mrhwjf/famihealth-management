@@ -6,7 +6,8 @@ import { cwd } from 'process'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, cwd(), '')
-  const apiBase = env.VITE_API_BASE_URL || 'http://localhost:8080'
+  // Use a dedicated proxy target var to avoid affecting runtime client code
+  const apiBase = env.VITE_PROXY_TARGET || 'http://localhost:8080'
 
   return {
     plugins: [
