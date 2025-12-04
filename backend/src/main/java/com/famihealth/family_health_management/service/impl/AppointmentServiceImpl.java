@@ -69,7 +69,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 		if (isFamily(session)) {
 			ensureFamilyAccess(session, patient);
-			ensureDoctorLinkedToMember(doctor.getId(), patient.getId());
+			// ensureDoctorLinkedToMember(doctor.getId(), patient.getId());
 			if (request.getStatus() == AppointmentStatus.COMPLETED) {
 				throw new ForbiddenException("Family accounts cannot mark appointments as completed");
 			}
@@ -172,7 +172,8 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 		Set<Integer> accessibleIds = null;
 		if (isFamilyCreator(session)) {
-			accessibleIds = familyMemberRepository.findIdByFamily_Id(session.getUserId());
+			Family family = familyRepository.findByCreator_Id(session.getUserId());
+			accessibleIds = familyMemberRepository.findIdByFamily_Id(family.getId());
 		} else if (isFamily(session)) {
 			accessibleIds = Set.of(session.getUserId());
 		} else if (isDoctor(session)) {
