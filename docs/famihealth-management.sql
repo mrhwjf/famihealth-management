@@ -14,26 +14,28 @@ CREATE TABLE `users` (
   `name` varchar(255),
   `phone` varchar(255) UNIQUE,
   `email` varchar(255) UNIQUE,
-  `is_locked` bool NOT NULL DEFAULT false
+  `profile_url` varchar(255),
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `locked` bool NOT NULL DEFAULT false
 );
 
-CREATE TABLE `permissions` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `name` varchar(255) UNIQUE NOT NULL,
-  `description` text
-);
+-- Old doctor_profiles table definition
+-- CREATE TABLE `doctor_profiles` (
+--   `doctor_id` int PRIMARY KEY,
+--   `license_number` varchar(255),
+--   `certificate_file_url` varchar(255),
+--   `verified` bool NOT NULL DEFAULT false
+-- );
 
-CREATE TABLE `role_permissions` (
-  `role_id` int,
-  `permission_id` int,
-  Primary key(role_id,permission_id)
-);
-
+-- New doctor_profiles table definition
 CREATE TABLE `doctor_profiles` (
   `doctor_id` int PRIMARY KEY,
-  `license_number` varchar(255) NOT NULL,
+  `facility_id` int,
+  `specialization_id` int,
+  `license_number` varchar(255),
   `certificate_file_url` varchar(255),
-  `is_verified` bool NOT NULL DEFAULT false
+  `verified` bool NOT NULL DEFAULT false
 );
 
 CREATE TABLE `doctor_verifications` (
@@ -46,20 +48,40 @@ CREATE TABLE `doctor_verifications` (
   `remarks` text
 );
 
+CREATE TABLE `specializations` (
+  `id` int PRIMARY KEY AUTO_INCREMENT,
+  `name` varchar(255) UNIQUE NOT NULL,
+  `description` text
+);
+
+-- Old appointments table definition
+-- CREATE TABLE `appointments` (
+--   `id` int PRIMARY KEY AUTO_INCREMENT,
+--   `issuer_id` int,
+--   `patient_id` int,
+--   `doctor_id` int,
+--   `appointment_datetime` datetime,
+--   `location` varchar(255),
+--   `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
+--   `notes` text
+-- );
+
+-- New appointments table definition
 CREATE TABLE `appointments` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `issuer_id` int,
   `patient_id` int,
   `doctor_id` int,
   `appointment_datetime` datetime,
-  `location` varchar(255),
-  `status` enum('SCHEDULED','CANCELLED','COMPLETED'),
+  `reason` varchar(255),
+  `status` enum('PENDING','SCHEDULED','CANCELLED','COMPLETED'),
   `notes` text
 );
 
 CREATE TABLE `families` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `creator_id` int,
+  `name` varchar(255),
   `address` varchar(255),
   `phone` varchar(255)
 );
@@ -67,6 +89,7 @@ CREATE TABLE `families` (
 CREATE TABLE `family_access` (
   `family_id` int,
   `user_id` int,
+  `family_creator` boolean,
   Primary key(family_id,user_id)
 );
 
@@ -85,7 +108,8 @@ CREATE TABLE `family_members` (
   `dob` date,
   `gender` enum('MALE','FEMALE','OTHER'),
   `blood_type` enum('A+','A-','B+','B-','AB+','AB-','O+','O-'),
-  `phone` varchar(255)
+  `phone` varchar(255),
+  `profile_url` varchar(255)
 );
 
 CREATE TABLE `relationships_to_creator` (
@@ -128,7 +152,6 @@ CREATE TABLE `medical_records` (
 CREATE TABLE `medical_documents` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
   `medical_record_id` int,
-  `file_type` varchar(255),
   `file_name` varchar(255),
   `upload_date` datetime DEFAULT CURRENT_TIMESTAMP,
   `file_url` varchar(255)
@@ -182,22 +205,12 @@ CREATE TABLE `health_stats` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE `password_reset_tokens` (
-  `id` int PRIMARY KEY AUTO_INCREMENT,
-  `user_id` int,
-  `token` varchar(255) UNIQUE NOT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `expires_at` datetime,
-  `is_used` boolean DEFAULT false
-);
-
 CREATE TABLE `family_invite_codes` (
   `id` int PRIMARY KEY AUTO_INCREMENT,
-  `family_id` int,
+  `family_id` int NOT NULL UNIQUE, -- ensures one active code per family
   `code` varchar(255) UNIQUE NOT NULL,
-  `created_by` int,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  `is_active` boolean DEFAULT true
+  `updated_at` datetime ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `active` boolean DEFAULT true
 );
 
 -- ==========================================
@@ -209,56 +222,15 @@ USE family_health_management;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =========================
--- 1. ROLES
+-- ROLES
 -- =========================
 INSERT INTO roles (name, description) VALUES
 ('ADMIN', 'Quản trị viên hệ thống, có toàn quyền truy cập'),
 ('DOCTOR', 'Bác sĩ có quyền truy cập hồ sơ y tế của gia đình được liên kết'),
-('FAMILY_CREATOR', 'Người tạo và quản lý tài khoản gia đình'),
-('FAMILY_MEMBER', 'Thành viên trong gia đình do người tạo thêm vào');
+('FAMILY', 'Người tạo và quản lý tài khoản gia đình');
 
 -- =========================
--- 2. PERMISSIONS
--- =========================
-INSERT INTO permissions (name, description) VALUES
-('MANAGE_USERS', 'Tạo, chỉnh sửa hoặc khóa/mở khóa tài khoản người dùng'),
-('MANAGE_MASTER_DATA', 'Chỉnh sửa dữ liệu danh mục như vắc-xin, thuốc, cơ sở y tế, quan hệ, v.v.'),
-('ACCESS_FAMILY_RECORDS', 'Xem hồ sơ y tế của bệnh nhân/gia đình'),
-('MODIFY_FAMILY_RECORDS', 'Chỉnh sửa hồ sơ y tế của bệnh nhân/gia đình'),
-('VIEW_HEALTH_STATISTICS', 'Xem thống kê và dữ liệu sức khỏe');
-
-
--- =========================
--- 3. ROLE_PERMISSIONS
--- =========================
--- ADMIN có tất cả quyền
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(1, 1),
-(1, 2);
-
--- DOCTOR: chỉ có quyền liên quan đến bệnh nhân
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(2, 3), -- ACCESS_FAMILY_RECORDS
-(2, 4), -- MODIFY_FAMILY_RECORDS
-(2, 5); -- VIEW_HEALTH_STATISTICS
-
-
--- FAMILY_CREATOR: quyền quản lý hồ sơ gia đình
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(3, 3), -- ACCESS_FAMILY_RECORDS
-(3, 4); -- CREATE_APPOINTMENT
-
--- FAMILY_MEMBER: chỉ xem được hồ sơ
-INSERT INTO role_permissions (role_id, permission_id)
-VALUES
-(4, 3), -- ACCESS_FAMILY_RECORDS
-(4,5); -- VIEW_HEALTH_STATISTICS
-
--- =========================
--- 4. VACCINES
+-- VACCINES
 -- =========================
 INSERT INTO vaccines (name) VALUES
 ('Viêm gan B'),
@@ -281,7 +253,7 @@ INSERT INTO vaccines (name) VALUES
 ('Dại');
 
 -- =========================
--- 5. DRUGS
+-- DRUGS
 -- =========================
 INSERT INTO drugs (name, description) VALUES
 ('Paracetamol', 'Thuốc hạ sốt, giảm đau thông thường'),
@@ -306,7 +278,7 @@ INSERT INTO drugs (name, description) VALUES
 ('Gabapentin', 'Thuốc điều trị động kinh và đau thần kinh');
 
 -- =========================
--- 6. RELATIONSHIPS_TO_CREATOR
+-- RELATIONSHIPS_TO_CREATOR
 -- =========================
 INSERT INTO relationships_to_creator (relationship_name, description) VALUES
 ('Khác', 'Mối quan hệ khác'),
@@ -326,7 +298,7 @@ INSERT INTO relationships_to_creator (relationship_name, description) VALUES
 ('Bà ngoại', 'Bà ngoại của người tạo');
 
 -- =========================
--- 7. FACILITIES
+-- FACILITIES
 -- =========================
 INSERT INTO facilities (name) VALUES
 ('Bệnh viện Chợ Rẫy'),
@@ -345,7 +317,7 @@ INSERT INTO facilities (name) VALUES
 ('Phòng khám Đa khoa Saigon Healthcare');
 
 -- =========================
--- 8. HEALTH_STATS_TYPES
+-- HEALTH_STATS_TYPES
 -- =========================
 INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal_range_max, description) VALUES
 ('Huyết áp tâm thu', 'mmHg', 90, 120, 'Chỉ số huyết áp tâm thu bình thường'),
@@ -357,16 +329,65 @@ INSERT INTO health_stats_types (name, measurement_unit, normal_range_min, normal
 ('Chiều cao', 'cm', null, null, 'Chiều cao cơ thể con người'),
 ('Cân nặng', 'kg', null, null, 'Cân nặng cơ thể con người');
 
+-- =========================
+-- USERS
+-- =========================
+INSERT INTO users (role_id, password_hash, name, phone, email, profile_url, locked) VALUES
+-- pass: admin_hashed_password
+(1, '$2a$10$5cLEAH6w.aAjapwqTwUoCuTz3AptHBMyBxnJccjSS3IEovdF/S3Sq', 'Admin User', '0123456789', 'admin@example.com', 'http://example.com/profile/admin', false),
+-- pass: doctor_hashed_password
+(2, '$2a$10$1w1WZeFJhuvUSTw.PASfHOov45xWfK2Cggf5izzXeyJoVJCJkIoym', 'Dr. John Doe', '0987654321', 'doctor@example.com', 'http://example.com/profile/doctor', false),
+-- pass: family_hashed_password
+(3, '$2a$10$NHJHvSJuV7C1ErnfAsOMru16sLoVZhbRf6mskO5pZR3xg428crBbu', 'Family Creator User', '0112233445', 'family@example.com', 'http://example.com/profile/family', false),
+-- pass: member_hashed_password
+(3, '$2a$10$/YfGL2VwcqbLCnWh3uJcYuYQ8.xnJHQ3d/JMsUZc.wwRTX0pNrwra', 'Family Member User', '0223344556', 'member@example.com', 'http://example.com/profile/member', false);
+
+-- =========================
+-- DOCTOR_PROFILES
+-- =========================
+INSERT INTO doctor_profiles (doctor_id, license_number, certificate_file_url, verified) VALUES
+(2, 'DOC123456', 'http://example.com/certificates/doc_john_doe.pdf', true);
+
+
+-- =========================
+-- SPECIALIZATIONS
+-- =========================
+INSERT INTO specializations (name, description) VALUES
+('Nội tổng quát', 'Chẩn đoán và điều trị các bệnh lý nội khoa phổ biến'),
+('Nhi khoa', 'Khám và điều trị bệnh cho trẻ sơ sinh, trẻ nhỏ và thanh thiếu niên'),
+('Sản phụ khoa', 'Khám thai, sinh nở, điều trị bệnh lý phụ khoa'),
+('Tai - Mũi - Họng', 'Điều trị các bệnh lý liên quan đến tai, mũi, họng'),
+('Răng - Hàm - Mặt', 'Chăm sóc răng miệng và điều trị các bệnh vùng hàm mặt'),
+('Da liễu', 'Điều trị bệnh lý da, tóc, móng và thẩm mỹ da'),
+('Tim mạch', 'Chẩn đoán và điều trị bệnh lý tim và mạch máu'),
+('Hô hấp', 'Điều trị bệnh phổi và các rối loạn hô hấp'),
+('Tiêu hóa', 'Các bệnh lý dạ dày, ruột, gan, tụy'),
+('Nội tiết - Tiểu đường', 'Chẩn đoán và điều trị các rối loạn nội tiết và bệnh tiểu đường'),
+('Thận - Tiết niệu', 'Điều trị bệnh thận, đường tiết niệu và sinh dục nam'),
+('Cơ xương khớp', 'Khám và điều trị bệnh lý xương khớp, chấn thương thể thao'),
+('Thần kinh', 'Chẩn đoán và điều trị bệnh lý hệ thần kinh'),
+('Ung bướu', 'Khám và điều trị ung thư, khối u lành và ác tính'),
+('Huyết học', 'Điều trị các bệnh lý về máu và rối loạn đông máu'),
+('Ngoại tổng quát', 'Phẫu thuật và hậu phẫu các bệnh lý ngoại khoa'),
+('Chấn thương chỉnh hình', 'Điều trị gãy xương, sai khớp, chấn thương cơ xương khớp'),
+('Nhãn khoa', 'Khám và điều trị bệnh về mắt'),
+('Tâm thần', 'Khám và điều trị rối loạn tâm lý và tâm thần'),
+('Dinh dưỡng', 'Tư vấn và điều trị các vấn đề liên quan đến dinh dưỡng'),
+('Lão khoa', 'Khám và điều trị bệnh cho người cao tuổi'),
+('Truyền nhiễm', 'Điều trị bệnh do vi khuẩn, virus, ký sinh trùng và nấm'),
+('Phục hồi chức năng', 'Vật lý trị liệu và phục hồi sau chấn thương hoặc phẫu thuật');
+
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 
-ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
-
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`);
-
-ALTER TABLE `role_permissions` ADD FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`);
+ALTER TABLE `users` ADD FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE RESTRICT;
 
 ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL;
+
+ALTER TABLE `doctor_profiles` ADD FOREIGN KEY (`specialization_id`) REFERENCES `specializations` (`id`) ON DELETE SET NULL;
 
 ALTER TABLE `doctor_verifications` ADD FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
@@ -396,7 +417,7 @@ ALTER TABLE `family_members` ADD FOREIGN KEY (`relationship_to_creator_id`) REFE
 
 ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`vacc_id`) REFERENCES `vaccines` (`id`);
+ALTER TABLE `vaccination_records` ADD FOREIGN KEY (`vacc_id`) REFERENCES `vaccines` (`id`) ON DELETE SET NULL;
 
 ALTER TABLE `medical_records` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
@@ -412,12 +433,11 @@ ALTER TABLE `allergies` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_
 
 ALTER TABLE `health_stats` ADD FOREIGN KEY (`family_member_id`) REFERENCES `family_members` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `health_stats` ADD FOREIGN KEY (`stats_type_id`) REFERENCES `health_stats_types` (`id`);
-
-ALTER TABLE `password_reset_tokens` ADD FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+ALTER TABLE `health_stats` ADD FOREIGN KEY (`stats_type_id`) REFERENCES `health_stats_types` (`id`) ON DELETE RESTRICT;
 
 ALTER TABLE `family_invite_codes` ADD FOREIGN KEY (`family_id`) REFERENCES `families` (`id`) ON DELETE CASCADE;
 
-ALTER TABLE `family_invite_codes` ADD FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
 ALTER TABLE `medical_records` ADD FOREIGN KEY (`facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL;
+
+ALTER TABLE `medical_documents` ADD FOREIGN KEY (`medical_record_id`) REFERENCES `medical_records` (`id`) ON DELETE CASCADE;
+

@@ -1,0 +1,58 @@
+// Upload Service: API upload chứng chỉ hành nghề bác sĩ
+// Endpoint theo Swagger:
+// POST /api/v1/doctor-profiles/{doctorId}/certificate/upload (multipart/form-data)
+
+import { authHeaders } from './auth/loginService.js';
+
+const BASE_URL = '/api/v1/doctor-profiles';
+
+async function handleResponse(resp) {
+	// Cố gắng parse JSON; nếu lỗi, trả về text để dễ debug
+	const contentType = resp.headers.get('content-type') || '';
+	let data;
+	if (contentType.includes('application/json')) {
+		data = await resp.json().catch(() => ({}));
+	} else {
+		const text = await resp.text().catch(() => '');
+		data = text ? { message: text } : {};
+	}
+
+	if (!resp.ok) {
+		// Ưu tiên message từ backend
+		const msg = (data && data.message) || `HTTP ${resp.status}`;
+		throw new Error(msg);
+	}
+	return data;
+}
+
+/**
+ * Upload chứng chỉ hành nghề (PDF hoặc hình) cho bác sĩ.
+ * @param {{ doctorId: number|string, file: File, headerName?: string }} params
+ * @returns {Promise<{ fileUrl: string }|any>} JSON từ backend, thường có { fileUrl }
+ */
+export async function uploadDoctorCertificate({ doctorId, file, headerName = 'X-Session-Id' }) {
+	if (doctorId === undefined || doctorId === null) throw new Error('doctorId is required');
+	if (!file) throw new Error('file is required');
+
+	const url = `${BASE_URL}/${encodeURIComponent(doctorId)}/certificate/upload`;
+
+	const formData = new FormData();
+	// Theo Swagger, field name là 'file'
+	formData.append('file', file, file.name);
+
+	const resp = await fetch(url, {
+		method: 'POST',
+		headers: {
+			// KHÔNG đặt 'Content-Type': trình duyệt sẽ tự set với boundary
+			...authHeaders(headerName),
+			Accept: '*/*',
+		},
+		body: formData,
+	});
+	return handleResponse(resp);
+}
+
+export default {
+	uploadDoctorCertificate,
+};
+

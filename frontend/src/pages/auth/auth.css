@@ -1,0 +1,112 @@
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 16px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #f6fbf8 100%);
+}
+
+/* floating soft color blobs */
+.auth-wrapper::before,
+.auth-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  filter: blur(80px);
+  opacity: 0.9;
+  z-index: 0;
+  pointer-events: none;
+}
+.auth-wrapper::before {
+  left: -18%;
+  top: -22%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,210,160,0.95) 0%, rgba(255,243,224,0.0) 45%);
+}
+.auth-wrapper::after {
+  right: -18%;
+  bottom: -18%;
+  background: radial-gradient(circle at 70% 70%, rgba(180,240,200,0.95) 0%, rgba(224,250,235,0.0) 45%);
+}
+
+/* soft middle glow */
+.auth-wrapper .auth-mid-glow {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  transform: translateX(-50%);
+  width: 420px;
+  height: 220px;
+  background: radial-gradient(circle at 50% 50%, rgba(224,250,235,0.7), rgba(255,255,255,0));
+  filter: blur(40px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.auth-inner {
+  width: 420px;
+  max-width: 92vw;
+  z-index: 2;
+}
+
+/* nudge the inner box slightly up so the card+header visually centers better */
+.auth-inner {
+  transform: translateY(-20px);
+}
+
+@media (max-width: 600px) {
+  .auth-inner {
+    transform: translateY(-8px);
+  }
+}
+
+/* stronger card border and subtle shadow */
+.auth-inner .ant-card {
+  border: 1px solid rgba(34,34,34,0.12) !important;
+  box-shadow: 0 8px 24px rgba(49,49,49,0.06);
+  border-radius: 8px;
+}
+
+/* make input borders clearer */
+.auth-inner .ant-input,
+.auth-inner .ant-input-affix-wrapper,
+.auth-inner .ant-input-password {
+  border-color: rgba(34,34,34,0.14) !important;
+}
+
+.auth-inner .ant-form-item-label > label {
+  color: rgba(0,0,0,0.85);
+  font-weight: 600;
+}
+
+/* green primary buttons consistent */
+.auth-inner .ant-btn-primary {
+  background: #20b06b !important;
+  border-color: #20b06b !important;
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.auth-welcome {
+  margin-top: 8px;
+  color: #2d6a4f;
+  font-weight: 600;
+}
+
+/* Make welcome text larger and responsive */
+.auth-welcome {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+@media (min-width: 900px) {
+  .auth-welcome {
+    font-size: 20px;
+  }
+}
