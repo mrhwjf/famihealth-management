@@ -65,6 +65,9 @@ export async function uploadProfileAvatar({ file, headerName = 'X-Session-Id' })
 	return data;
 }
 
+export default {
+	uploadDoctorCertificate,
+	uploadProfileAvatar,
 // Upload medical document (multipart/form-data)
 // Swagger: POST /api/v1/medical-documents/upload?medicalRecordId=ID -> { id, fileName, uploadDate, fileUrl }
 export async function uploadMedicalDocument({ medicalRecordId, file, headerName = 'X-Session-Id' }) {

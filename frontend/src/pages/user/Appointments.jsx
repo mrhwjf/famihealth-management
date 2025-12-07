@@ -23,6 +23,12 @@ import {
 } from "antd";
 import useIsMobile from "../../hooks/useIsMobile";
 import { appointmentService } from "../../services/appointmentService";
+import {
+  loadStoredAppointments,
+  saveStoredAppointments,
+  mergeAppointmentLists,
+  upsertStoredAppointment,
+} from "../../utils/upcomingAppointmentsStorage";
 
 const { Title, Text } = Typography;
 const layoutStyle = {
@@ -31,6 +37,8 @@ const layoutStyle = {
   width: "100%",
   maxWidth: "100%",
 };
+
+const DEFAULT_SESSION_ID = "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
 
 // DEV doctors for testing
 const DEV_DOCTORS = [
@@ -93,71 +101,6 @@ const normalizeStatus = (raw) => {
   return { ...raw, value, label };
 };
 
-const STORAGE_PREFIX = "fh-upcoming-appts";
-const buildStorageKey = (userId) =>
-  `${STORAGE_PREFIX}-${
-    userId !== null && userId !== undefined ? String(userId) : "guest"
-  }`;
-
-const loadStoredAppointments = (userId) => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(buildStorageKey(userId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (err) {
-    console.warn("Không đọc được lịch hẹn từ localStorage:", err);
-    return [];
-  }
-};
-
-const saveStoredAppointments = (userId, items) => {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(
-      buildStorageKey(userId),
-      JSON.stringify(Array.isArray(items) ? items : [])
-    );
-  } catch (err) {
-    console.warn("Không ghi được lịch hẹn vào localStorage:", err);
-  }
-};
-
-const appointmentIdentity = (item) =>
-  String(
-    item?.id ??
-      item?.localId ??
-      `${item?.patientId}-${item?.doctorId}-$
-        {item?.appointmentDatetime || item?.appointmentDate || item?.date || ""}
-      `
-  );
-
-const upsertStoredAppointment = (userId, appointment, limit = 50) => {
-  if (!appointment) return;
-  const existing = loadStoredAppointments(userId);
-  const filtered = existing.filter(
-    (item) => appointmentIdentity(item) !== appointmentIdentity(appointment)
-  );
-  filtered.unshift({
-    ...appointment,
-    localId: appointment.localId ?? Date.now(),
-  });
-  saveStoredAppointments(userId, filtered.slice(0, limit));
-};
-
-const mergeAppointmentLists = (...lists) => {
-  const map = new Map();
-  lists
-    .flat()
-    .filter(Boolean)
-    .forEach((item) => {
-      const key = appointmentIdentity(item);
-      if (!map.has(key)) map.set(key, item);
-    });
-  return Array.from(map.values());
-};
-
 const extractAppointments = (payload) => {
   if (!payload) return [];
   const candidates = [
@@ -190,11 +133,14 @@ export default function Appointments() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const sessionId =
+  const storedSessionId =
+    sessionStorage.getItem("sessionId") ||
     sessionStorage.getItem("session_id") ||
-    "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
-  const rawUserId = sessionStorage.getItem("user_id");
-  const currentUserId = rawUserId ? Number(rawUserId) : null;
+    "";
+  const sessionId = storedSessionId || DEFAULT_SESSION_ID;
+  const storedUserId =
+    sessionStorage.getItem("user_id") || sessionStorage.getItem("userId") || "";
+  const currentUserId = storedUserId ? Number(storedUserId) : null;
 
   // build events map from appointment items - show doctorId only (#<id>)
   const buildEventsMap = (items) => {

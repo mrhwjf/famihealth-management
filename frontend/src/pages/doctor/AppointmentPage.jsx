@@ -20,79 +20,106 @@ const STATUS_LABEL = {
 
 
 const AppointmentPage = () => {
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState({ page: 0, size: 10, totalElements: 0 });
-    // Backend expects entity property names for sort (camelCase)
-    const [sort, setSort] = useState(['appointmentDatetime,DESC']);
-    const [formVisible, setFormVisible] = useState(false);
-    const [detailVisible, setDetailVisible] = useState(false);
-    const [editing, setEditing] = useState(null);
-    const [form] = Form.useForm();
-    const [patientOptions, setPatientOptions] = useState([]);
+        const [appointments, setAppointments] = useState([]);
+        const [loading, setLoading] = useState(false);
+        const [page, setPage] = useState({ page: 0, size: 10, totalElements: 0 });
+        // Backend expects entity property names for sort (camelCase)
+        const [sort, setSort] = useState(['appointmentDatetime,DESC']);
+        const [formVisible, setFormVisible] = useState(false);
+        const [detailVisible, setDetailVisible] = useState(false);
+        const [editing, setEditing] = useState(null);
+        const [form] = Form.useForm();
 
-    // Filters UI state
-    const [dateRange, setDateRange] = useState(null); // [startDayjs, endDayjs]
-    const [statusFilter, setStatusFilter] = useState();
-    const [currentFilters, setCurrentFilters] = useState({});
+        // Filters UI state
+        const [dateRange, setDateRange] = useState(null); // [startDayjs, endDayjs]
+        const [statusFilter, setStatusFilter] = useState();
+        const [currentFilters, setCurrentFilters] = useState({});
 
-    const getCurrentUserId = () => {
-        const raw = sessionStorage.getItem('currentUserId');
-        const n = Number(raw);
-        return Number.isFinite(n) ? n : undefined;
-    };
+        const getCurrentUserId = () => {
+            const raw = sessionStorage.getItem('currentUserId');
+            const n = Number(raw);
+            return Number.isFinite(n) ? n : undefined;
+        };
 
-    const fetchAppointments = useCallback(async (p = page.page, s = page.size, sortBy = sort, filters = {}) => {
-        try {
-            setLoading(true);
-            const resp = await searchAppointments({ pageable: { page: p, size: s, sort: sortBy }, filters, headerName: 'X-Session-Id' });
-            const payload = resp?.data || { items: [], content: [], page: 0, size: s, totalElements: 0 };
-            const rows = Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.content) ? payload.content : []);
-            const mapped = rows.map(a => ({
-                id: a.id,
-                patient_id: a.patientId ?? a.patient_id,
-                doctor_id: a.doctorId ?? a.doctor_id,
-                issuer_id: a.issuerId ?? a.issuer_id,
-                appointment_datetime: a.appointmentDatetime ?? a.appointment_datetime,
-                reason: a.reason ?? '',
-                status: a.status,
-                notes: a.notes ?? '',
-                // Swagger shows 'patient' as display name; prefer that
-                patient_name: a.patient ?? a.patientName ?? a.patient_name,
-            }));
-            setAppointments(mapped);
-            setPage({ page: payload.page ?? payload.number ?? p, size: payload.size ?? s, totalElements: payload.totalElements ?? mapped.length });
-        } catch (e) {
-            message.error(e?.message || 'Không tải được danh sách lịch hẹn');
-            setAppointments([]);
-            setPage({ page: p, size: s, totalElements: 0 });
-        } finally {
-            setLoading(false);
-        }
-    }, [page.page, page.size, sort]);
-
-    useEffect(() => {
-        // Default very wide date range because backend may require it
-        const startDate = '1900-01-01';
-        const endDate = '2100-12-31';
-        const filters = { doctorId: getCurrentUserId(), startDate, endDate };
-        setCurrentFilters(filters);
-        fetchAppointments(0, page.size, sort, filters);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const openAddModal = () => {
-        setEditing(null);
-        form.resetFields();
-        // Load permitted patients for current role
-        (async () => {
+        const fetchAppointments = useCallback(async (p = page.page, s = page.size, sortBy = sort, filters = {}) => {
             try {
-                const resp = await getAppointmentFormData({ headerName: 'X-Session-Id' });
-                const fm = resp?.data?.familyMembers || resp?.familyMembers || [];
-                const opts = fm.map(m => ({ label: m.name || String(m.id), value: m.id }));
-                setPatientOptions(opts);
-            } catch {
-                setPatientOptions([]);
+                setLoading(true);
+            const resp = await searchAppointments({ pageable: { page: p, size: s, sort: sortBy }, filters, headerName: 'X-Session-Id' });
+                const payload = resp?.data || { items: [], content: [], page: 0, size: s, totalElements: 0 };
+                const rows = Array.isArray(payload.items) ? payload.items : (Array.isArray(payload.content) ? payload.content : []);
+                const mapped = rows.map(a => ({
+                    id: a.id,
+                    patient_id: a.patientId ?? a.patient_id,
+                    doctor_id: a.doctorId ?? a.doctor_id,
+                    issuer_id: a.issuerId ?? a.issuer_id,
+                    appointment_datetime: a.appointmentDatetime ?? a.appointment_datetime,
+                    reason: a.reason ?? '',
+                    status: a.status,
+                    notes: a.notes ?? '',
+                    // Swagger shows 'patient' as display name; prefer that
+                    patient_name: a.patient ?? a.patientName ?? a.patient_name,
+                }));
+                setAppointments(mapped);
+                setPage({ page: payload.page ?? payload.number ?? p, size: payload.size ?? s, totalElements: payload.totalElements ?? mapped.length });
+            } catch (e) {
+                message.error(e?.message || 'Không tải được danh sách lịch hẹn');
+                setAppointments([]);
+                setPage({ page: p, size: s, totalElements: 0 });
+            } finally {
+                setLoading(false);
+            }
+        }, [page.page, page.size, sort]);
+
+        useEffect(() => {
+            // Default very wide date range because backend may require it
+            const startDate = '1900-01-01';
+            const endDate = '2100-12-31';
+            const filters = { doctorId: getCurrentUserId(), startDate, endDate };
+            setCurrentFilters(filters);
+            fetchAppointments(0, page.size, sort, filters);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+
+        const openAddModal = () => {
+            setEditing(null);
+            form.resetFields();
+            setFormVisible(true);
+        };
+
+        const openEditModal = (record) => {
+            setEditing(record);
+            form.setFieldsValue({
+                patient_id: record.patient_id,
+                appointment_datetime: record.appointment_datetime ? dayjs(record.appointment_datetime) : null,
+                reason: record.reason,
+                notes: record.notes,
+                status: record.status,
+            });
+            setFormVisible(true);
+        };
+
+        const handleFormOk = async () => {
+            try {
+                const values = await form.validateFields();
+                const payload = {
+                    patientId: values.patient_id,
+                    appointmentDatetime: values.appointment_datetime?.toISOString(),
+                    reason: values.reason,
+                    notes: values.notes,
+                    status: values.status || 'PENDING',
+                };
+                setLoading(true);
+                if (editing) {
+                    await updateAppointment({ appointmentId: editing.id, data: payload, headerName: 'X-Session-Id' });
+                    message.success('Cập nhật lịch hẹn thành công');
+                } else {
+                    await createAppointment({ data: payload, headerName: 'X-Session-Id' });
+                    message.success('Tạo lịch hẹn mới thành công');
+                }
+                setFormVisible(false);
+                fetchAppointments(page.page, page.size, sort);
+            } catch (e) {
+                message.error(e?.message || 'Lưu lịch hẹn thất bại');
             } finally {
                 setFormVisible(true);
             }
@@ -180,22 +207,20 @@ const AppointmentPage = () => {
     };
 
     const columns = [
-        { title: 'Bệnh nhân', dataIndex: 'patient_name', key: 'patient_name' },
-        { title: 'Thời gian', dataIndex: 'appointment_datetime', key: 'appointment_datetime', render: (v) => v ? dayjs(v).format('HH:mm, DD/MM/YYYY') : '-' },
-        { title: 'Lý do', dataIndex: 'reason', key: 'reason' },
-        { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: (s) => <Tag>{STATUS_LABEL[s] || s}</Tag> },
-        {
-            title: 'Thao tác', key: 'action', render: (_, record) => (
-                <Space>
-                    <Button size="small" onClick={() => { setDetailVisible(true); setEditing(record); }}>Chi tiết</Button>
-                    <Button size="small" onClick={() => openEditModal(record)}>Sửa</Button>
-                    <Popconfirm title="Xoá lịch hẹn này?" onConfirm={() => handleDelete(record)}>
-                        <Button size="small" danger>Xoá</Button>
-                    </Popconfirm>
-                    <Button size="small" onClick={() => handleComplete(record)}>Hoàn tất</Button>
-                </Space>
-            )
-        },
+      { title: 'Bệnh nhân', dataIndex: 'patient_name', key: 'patient_name' },
+    { title: 'Thời gian', dataIndex: 'appointment_datetime', key: 'appointment_datetime', render: (v) => v ? dayjs(v).format('HH:mm, DD/MM/YYYY') : '-' },
+    { title: 'Lý do', dataIndex: 'reason', key: 'reason' },
+      { title: 'Trạng thái', dataIndex: 'status', key: 'status', render: (s) => <Tag>{STATUS_LABEL[s] || s}</Tag> },
+      { title: 'Thao tác', key: 'action', render: (_, record) => (
+        <Space>
+          <Button size="small" onClick={() => { setDetailVisible(true); setEditing(record); }}>Chi tiết</Button>
+          <Button size="small" onClick={() => openEditModal(record)}>Sửa</Button>
+          <Popconfirm title="Xoá lịch hẹn này?" onConfirm={() => handleDelete(record)}>
+            <Button size="small" danger>Xoá</Button>
+          </Popconfirm>
+          <Button size="small" onClick={() => handleComplete(record)}>Hoàn tất</Button>
+        </Space>
+      ) },
     ];
 
     return (
