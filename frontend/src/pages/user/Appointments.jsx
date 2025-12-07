@@ -23,6 +23,12 @@ import {
 } from "antd";
 import useIsMobile from "../../hooks/useIsMobile";
 import { appointmentService } from "../../services/appointmentService";
+import {
+  loadStoredAppointments,
+  saveStoredAppointments,
+  mergeAppointmentLists,
+  upsertStoredAppointment,
+} from "../../utils/upcomingAppointmentsStorage";
 
 const { Title, Text } = Typography;
 const layoutStyle = {
@@ -31,6 +37,8 @@ const layoutStyle = {
   width: "100%",
   maxWidth: "100%",
 };
+
+const DEFAULT_SESSION_ID = "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
 
 // DEV doctors for testing
 const DEV_DOCTORS = [
@@ -81,10 +89,31 @@ const normalizeStatus = (raw) => {
     return { value: raw, label: raw };
   }
   const value =
-    raw.value ?? raw.code ?? raw.key ?? raw.id ?? raw.status ?? raw.name ?? null;
+    raw.value ??
+    raw.code ??
+    raw.key ??
+    raw.id ??
+    raw.status ??
+    raw.name ??
+    null;
   if (value === null) return null;
   const label = raw.label ?? raw.name ?? raw.displayName ?? String(value);
   return { ...raw, value, label };
+};
+
+const extractAppointments = (payload) => {
+  if (!payload) return [];
+  const candidates = [
+    payload?.data?.items,
+    payload?.data?.data,
+    payload?.data,
+    payload?.items,
+    payload,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+  }
+  return [];
 };
 
 export default function Appointments() {
@@ -104,11 +133,14 @@ export default function Appointments() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const sessionId =
+  const storedSessionId =
+    sessionStorage.getItem("sessionId") ||
     sessionStorage.getItem("session_id") ||
-    "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
-  const rawUserId = sessionStorage.getItem("user_id");
-  const currentUserId = rawUserId ? Number(rawUserId) : null;
+    "";
+  const sessionId = storedSessionId || DEFAULT_SESSION_ID;
+  const storedUserId =
+    sessionStorage.getItem("user_id") || sessionStorage.getItem("userId") || "";
+  const currentUserId = storedUserId ? Number(storedUserId) : null;
 
   // build events map from appointment items - show doctorId only (#<id>)
   const buildEventsMap = (items) => {
@@ -135,6 +167,13 @@ export default function Appointments() {
     });
     return map;
   };
+
+  useEffect(() => {
+    const stored = loadStoredAppointments(currentUserId);
+    if (stored.length > 0) {
+      setEventsByDate(buildEventsMap(stored));
+    }
+  }, [currentUserId]);
 
   // load doctors and upcoming appointments
   useEffect(() => {
@@ -179,9 +218,12 @@ export default function Appointments() {
           setAppointmentStatuses(statuses);
         }
 
-        if (mounted && apptRes?.data?.items) {
-          const map = buildEventsMap(apptRes.data.items);
-          setEventsByDate(map);
+        if (mounted && apptRes) {
+          const serverItems = extractAppointments(apptRes);
+          const stored = loadStoredAppointments(currentUserId);
+          const merged = mergeAppointmentLists(serverItems, stored);
+          setEventsByDate(buildEventsMap(merged));
+          saveStoredAppointments(currentUserId, merged);
         }
       } catch (err) {
         console.error("Failed to load appointments/doctors", err);
@@ -275,12 +317,14 @@ export default function Appointments() {
       const payload = {
         patientId: Number(values.patientId),
         doctorId: Number(values.doctorId),
-        appointmentDatetime: dayjs(values.appointmentDatetime).toISOString(),
+        appointmentDatetime: dayjs(values.appointmentDatetime).format(
+          "YYYY-MM-DDTHH:mm:ss"
+        ),
         reason: values.reason || "",
         notes: values.notes || "",
         status: values.status || defaultStatus,
       };
-
+      console.log(payload);
       setLoading(true);
 
       let created = null;
@@ -310,6 +354,7 @@ export default function Appointments() {
         source: "appointment",
         meta: created,
       });
+      upsertStoredAppointment(currentUserId, created);
 
       message.success("Đặt lịch thành công (hiển thị cục bộ).");
       setModalVisible(false);

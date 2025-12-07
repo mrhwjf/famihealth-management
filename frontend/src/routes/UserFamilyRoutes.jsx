@@ -50,10 +50,6 @@ const UserFamilyRoutes = {
           element: <Settings />,
         },
         {
-          path: "signout",
-          element: <Signout />,
-        },
-        {
           path: "memberprofile/:id",
           element: <MemberProfile />,
         },

@@ -28,6 +28,8 @@ const layoutStyle = {
   maxWidth: "100%",
 };
 
+const DEFAULT_SESSION_ID = "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+
 const FALLBACK_TEXT = "Chủ hộ";
 
 const toDisplayText = (value, fallback = FALLBACK_TEXT) =>
@@ -138,9 +140,11 @@ export default function MemberProfile() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const sessionID =
-    sessionStorage.getItem("session_id") ||
-    "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+  const storedSessionId =
+    sessionStorage.getItem("sessionId") ||
+    sessionStorage.getItem("sessionId") ||
+    "";
+  const sessionID = storedSessionId || DEFAULT_SESSION_ID;
   const familyID = 1;
 
   // Use location.state for immediate UI, but still fetch authoritative data below.

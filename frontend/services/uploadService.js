@@ -52,7 +52,21 @@ export async function uploadDoctorCertificate({ doctorId, file, headerName = 'X-
 	return handleResponse(resp);
 }
 
+// Upload profile avatar for current user (multipart/form-data)
+// Swagger: POST /api/v1/profile/upload -> { fileUrl: string }
+export async function uploadProfileAvatar({ file, headerName = 'X-Session-Id' }) {
+	const url = `/api/v1/profile/upload`;
+	const form = new FormData();
+	form.append('file', file);
+	const resp = await fetch(url, { method: 'POST', headers: { ...authHeaders(headerName) }, body: form });
+	const ct = resp.headers.get('content-type') || '';
+	const data = ct.includes('application/json') ? await resp.json() : { message: await resp.text() };
+	if (!resp.ok) throw new Error(data?.message || `HTTP ${resp.status}`);
+	return data;
+}
+
 export default {
 	uploadDoctorCertificate,
+	uploadProfileAvatar,
 };
 

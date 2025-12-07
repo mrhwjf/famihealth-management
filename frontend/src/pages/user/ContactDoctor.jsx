@@ -39,7 +39,9 @@ export default function ContactDoctor() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   // optional session header if your backend needs it
-  const sessionId = sessionStorage.getItem("session_id") || "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+  const sessionId =
+    sessionStorage.getItem("session_id") ||
+    "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
 
   const fetchDoctors = useCallback(
     async (page = 1, keyword = "") => {
@@ -76,7 +78,6 @@ export default function ContactDoctor() {
           const phone =
             it.phone ?? it.phoneNumber ?? it.user?.phone ?? "Không có";
           const profileUrl = it.profileUrl ?? it.user?.profileUrl ?? undefined;
-          const rating = typeof it.rating === "number" ? it.rating : 4.2;
           const numberOfReviews =
             typeof it.numberOfReviews === "number"
               ? it.numberOfReviews
@@ -88,7 +89,6 @@ export default function ContactDoctor() {
             specialty,
             contact: phone,
             profileUrl,
-            rating,
             numberOfReviews,
           };
         });
@@ -197,12 +197,6 @@ export default function ContactDoctor() {
                   <Card hoverable title={doctor.doctorName}>
                     <Text strong>Chuyên khoa: </Text>
                     <Text>{doctor.specialty}</Text>
-                    <br />
-                    <Text strong>Đánh giá: </Text>
-                    <Rate allowHalf disabled value={doctor.rating} />
-                    <Text style={{ marginLeft: 6 }}>
-                      ({doctor.numberOfReviews})
-                    </Text>
                     <br />
                     <Text strong>Liên hệ: </Text>
                     <Text>

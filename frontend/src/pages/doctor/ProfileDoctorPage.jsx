@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Avatar, Button, Descriptions, Tag, Typography, Modal, Form, Input, message, Upload, Space } from 'antd';
 import { UserOutlined, EditOutlined, UploadOutlined } from '@ant-design/icons';
-import { uploadDoctorCertificate } from '../../../services/uploadService.js';
+import { uploadDoctorCertificate, uploadProfileAvatar } from '../../../services/uploadService.js';
 import { getUserById } from '../../../services/usersService.js';
 
 const { Title } = Typography;
@@ -20,7 +20,9 @@ function getCurrentUserId() {
 const ProfileDoctorPage = () => {
     const [doctorData, setDoctorData] = useState(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [pendingCertFile, setPendingCertFile] = useState(null);
     const [form] = Form.useForm();
+    const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
 
     useEffect(() => {
         (async () => {
@@ -97,6 +99,40 @@ const ProfileDoctorPage = () => {
         return <div>Đang tải dữ liệu...</div>;
     }
 
+    const buildViewerUrl = (url) => {
+        if (!url) return '#';
+        try {
+            const encoded = encodeURIComponent(url);
+            return `https://docs.google.com/gview?embedded=1&url=${encoded}`;
+        } catch {
+            return url;
+        }
+    };
+
+    const handleSaveCertificate = async () => {
+        if (!pendingCertFile) {
+            message.warning('Vui lòng chọn tệp chứng chỉ trước');
+            return;
+        }
+        try {
+            const doctorId = doctorData.id;
+            const res = await uploadDoctorCertificate({ doctorId, file: pendingCertFile });
+            const newUrl = res?.fileUrl || res?.data?.fileUrl || '';
+            if (!newUrl) {
+                message.warning('Upload thành công nhưng không nhận được fileUrl');
+                return;
+            }
+            setDoctorData((prev) => ({
+                ...prev,
+                profile: { ...prev.profile, certificateFileUrl: newUrl },
+            }));
+            setPendingCertFile(null);
+            message.success('Đã lưu chứng chỉ hành nghề');
+        } catch (e) {
+            message.error(e?.message || 'Lưu chứng chỉ thất bại');
+        }
+    };
+
     return (
         <>
             <Title level={2}>Hồ sơ của tôi</Title>
@@ -109,9 +145,47 @@ const ProfileDoctorPage = () => {
             >
                 <Card.Meta
                     avatar={
-                        <Avatar size={64} src={doctorData.profile_url} icon={!doctorData.profile_url && <UserOutlined />} alt={doctorData.name}>
-                            {!doctorData.profile_url && doctorData.name ? doctorData.name.split(' ').map(n => n[0]).slice(-2).join('') : null}
-                        </Avatar>
+                        <Space direction="vertical" align="center">
+                            <Avatar size={64} src={doctorData.profile_url} icon={!doctorData.profile_url && <UserOutlined />} alt={doctorData.name}>
+                                {!doctorData.profile_url && doctorData.name ? doctorData.name.split(' ').map(n => n[0]).slice(-2).join('') : null}
+                            </Avatar>
+                            <Space>
+                                <Upload
+                                    accept="image/*"
+                                    showUploadList={false}
+                                    beforeUpload={(file) => {
+                                        setPendingAvatarFile(file);
+                                        message.success('Đã chọn ảnh. Nhấn Lưu để cập nhật.');
+                                        return false;
+                                    }}
+                                >
+                                    <Button size="small">Đổi</Button>
+                                </Upload>
+                                <Button
+                                    size="small"
+                                    type="primary"
+                                    disabled={!pendingAvatarFile}
+                                    onClick={async () => {
+                                        if (!pendingAvatarFile) return;
+                                        try {
+                                            const res = await uploadProfileAvatar({ file: pendingAvatarFile });
+                                            const newUrl = res?.fileUrl || res?.data?.fileUrl || '';
+                                            if (!newUrl) {
+                                                message.warning('Upload thành công nhưng không nhận được URL ảnh');
+                                                return;
+                                            }
+                                            setDoctorData((prev) => ({ ...prev, profile_url: newUrl }));
+                                            setPendingAvatarFile(null);
+                                            message.success('Ảnh đại diện đã được cập nhật (chỉ hiển thị tạm thời).');
+                                        } catch (e) {
+                                            message.error(e?.message || 'Cập nhật ảnh đại diện thất bại');
+                                        }
+                                    }}
+                                >
+                                    Lưu
+                                </Button>
+                            </Space>
+                        </Space>
                     }
                     title={doctorData.name}
                     description={getVerificationTag(doctorData.verification.status)}
@@ -123,45 +197,32 @@ const ProfileDoctorPage = () => {
                     <Descriptions.Item label="Số điện thoại">{doctorData.phone}</Descriptions.Item>
                     <Descriptions.Item label="Số giấy phép hành nghề">{doctorData.profile?.license_number}</Descriptions.Item>
                                         <Descriptions.Item label="Chứng chỉ hành nghề">
-                                            <Space direction="vertical">
+                                            <Space direction="vertical" style={{ width: '100%' }}>
                                                 {doctorData?.profile?.certificateFileUrl ? (
-                                                    <a href={doctorData.profile.certificateFileUrl} target="_blank" rel="noreferrer">
+                                                    <a href={buildViewerUrl(doctorData.profile.certificateFileUrl)} target="_blank" rel="noreferrer">
                                                         Xem chứng chỉ hiện tại
                                                     </a>
                                                 ) : (
                                                     <span>Chưa có tệp chứng chỉ</span>
                                                 )}
-                                                <Upload
-                                                    accept=".pdf,image/*"
-                                                    showUploadList={false}
-                                                    beforeUpload={async (file) => {
-                                                        try {
-                                                            // Giả sử id người dùng trùng với doctorId theo thiết kế @MapsId
-                                                            const doctorId = doctorData.id;
-                                                            const res = await uploadDoctorCertificate({ doctorId, file });
-                                                            const newUrl = res?.fileUrl || res?.data?.fileUrl || '';
-                                                            if (!newUrl) {
-                                                                message.warning('Upload thành công nhưng không nhận được fileUrl');
-                                                            } else {
-                                                                setDoctorData((prev) => ({
-                                                                    ...prev,
-                                                                    profile: {
-                                                                        ...prev.profile,
-                                                                        certificateFileUrl: newUrl,
-                                                                    },
-                                                                }));
-                                                                message.success('Đã tải lên chứng chỉ hành nghề');
-                                                            }
-                                                        } catch (e) {
-                                                            message.error(e?.message || 'Upload chứng chỉ thất bại');
-                                                        }
-                                                        // Ngăn antd tự upload
-                                                        return false;
-                                                    }}
-                                                >
-                                                    <Button icon={<UploadOutlined />}>Tải lên chứng chỉ</Button>
-                                                </Upload>
-                                                <small>Hỗ trợ *.pdf hoặc ảnh. Tệp sẽ được tải lên và gắn vào hồ sơ.</small>
+                                                <Space>
+                                                    <Upload
+                                                        accept=".pdf,image/*"
+                                                        showUploadList={false}
+                                                        beforeUpload={(file) => {
+                                                            setPendingCertFile(file);
+                                                            message.success('Đã chọn tệp. Nhấn Lưu để cập nhật.');
+                                                            return false; // ngăn antd upload tự động
+                                                        }}
+                                                    >
+                                                        <Button icon={<UploadOutlined />}>Chọn tệp</Button>
+                                                    </Upload>
+                                                    <Button type="primary" onClick={handleSaveCertificate} disabled={!pendingCertFile}>
+                                                        Lưu
+                                                    </Button>
+                                                    {pendingCertFile && <span>{pendingCertFile.name}</span>}
+                                                </Space>
+                                                <small>Hỗ trợ *.pdf hoặc ảnh. Chọn tệp rồi bấm Lưu để cập nhật.</small>
                                             </Space>
                                         </Descriptions.Item>
                 </Descriptions>
@@ -184,24 +245,6 @@ const ProfileDoctorPage = () => {
                     </Form.Item>
                     <Form.Item name="profile_url" label="URL ảnh đại diện">
                         <Input placeholder="https://example.com/path/to/avatar.jpg" />
-                    </Form.Item>
-                    <Form.Item label="Tải ảnh lên (tùy chọn)">
-                        <Space direction="vertical">
-                            <Upload
-                                accept="image/*"
-                                showUploadList={false}
-                                beforeUpload={(file) => {
-                                    // In a real app, upload to server and get URL
-                                    const fakeUrl = URL.createObjectURL(file);
-                                    form.setFieldsValue({ profile_url: fakeUrl });
-                                    message.success('Ảnh đã được chọn (demo)');
-                                    return false; // prevent automatic upload
-                                }}
-                            >
-                                <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
-                            </Upload>
-                            <small>Chọn ảnh để xem preview (demo). Ảnh thực tế nên upload lên server.</small>
-                        </Space>
                     </Form.Item>
                 </Form>
             </Modal>

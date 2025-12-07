@@ -52,11 +52,12 @@ export async function deleteAppointment({ appointmentId, headerName = 'X-Session
 
 export async function searchAppointments({ pageable = { page: 0, size: 10, sort: [] }, filters = {}, headerName = 'X-Session-Id' } = {}) {
   const params = new URLSearchParams();
-  params.append('pageable.page', pageable?.page ?? 0);
-  params.append('pageable.size', pageable?.size ?? 10);
+  // Align with Swagger: use page, size, sort (not pageable.*)
+  params.append('page', pageable?.page ?? 0);
+  params.append('size', pageable?.size ?? 10);
   (Array.isArray(pageable?.sort) ? pageable.sort : [pageable?.sort])
     .filter(Boolean)
-    .forEach((s) => params.append('pageable.sort', s));
+    .forEach((s) => params.append('sort', s));
   Object.entries(filters || {})
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .forEach(([k, v]) => {

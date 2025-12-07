@@ -19,7 +19,7 @@ export const appointmentService = {
     },
 
     getAppointments: async (sessionId, params = {}) => {
-        const res = await axios.get(`${API_BASE}/appointments`, {
+        const res = await axios.get(`${API_BASE}/appointments?`, {
             headers: buildHeaders(sessionId),
             params,
         });

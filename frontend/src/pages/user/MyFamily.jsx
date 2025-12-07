@@ -30,6 +30,8 @@ const layoutStyle = {
   maxWidth: "100%",
 };
 
+const DEFAULT_SESSION_ID = "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+
 /**
  * NOTE:
  * - No mock list — only one minimal test member is kept in initial state so you can open MemberProfile.
@@ -126,7 +128,11 @@ function AddMemberForm({ onSubmit }) {
 
 export default function MyFamily() {
   const navigate = useNavigate();
-  const sessionID = "3d2c4b28-1bed-4aa2-9298-2fcad169182b";
+  const storedSessionId =
+    sessionStorage.getItem("sessionId") ||
+    sessionStorage.getItem("session_id") ||
+    "";
+  const sessionID = storedSessionId || DEFAULT_SESSION_ID;
   const familyID = 1;
 
   // start with single test member only (no other fake data)
