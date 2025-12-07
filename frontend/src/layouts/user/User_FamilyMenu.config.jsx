@@ -62,6 +62,7 @@ const User_FamilyMenuConfig = () => {
       icon: <SettingOutlined />,
       path: "/user_family/settings",
     },
+    // Logout handled globally by ResponsiveMenu footer
   ];
 
   return items;

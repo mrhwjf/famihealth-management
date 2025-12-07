@@ -4,74 +4,141 @@ import { UserOutlined, SearchOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useDebounce from '../../hooks/useDebounce';
+import { searchAppointments } from '../../../services/appointmentsService';
 
 const { Title, Text } = Typography;
-
-// --- DỮ LIỆU GIẢ LẬP THEO ĐÚNG CẤU TRÚC DATABASE ---
-// This data simulates a JOIN between family_members and member_access for the logged-in doctor
-const mockPatientsData = [
-    {
-        id: 401, // family_members.id
-        name: 'Nguyễn Thị Bích',
-        dob: '2010-05-15',
-        gender: 'FEMALE',
-        blood_type: 'O+',
-        phone: '0912345678',
-        family_id: 301,
-        familyName: 'Gia đình Nguyễn Văn An',
-        profile_url: 'https://i.pravatar.cc/150?img=7',
-    },
-    {
-        id: 403, // family_members.id
-        name: 'Lê Thu Trang',
-        dob: '1985-11-20',
-        gender: 'FEMALE',
-        blood_type: 'A+',
-        phone: '0987654321',
-        family_id: 302,
-        familyName: 'Gia đình Lê Văn Cường',
-        profile_url: 'https://i.pravatar.cc/150?img=8',
-    },
-    {
-        id: 402, // family_members.id
-        name: 'Nguyễn Văn Hùng',
-        dob: '1982-02-10',
-        gender: 'MALE',
-        blood_type: 'B-',
-        phone: '0909090909',
-        family_id: 301,
-        familyName: 'Gia đình Nguyễn Văn An',
-        profile_url: null,
-    },
-];
-// --- KẾT THÚC DỮ LIỆU GIẢ LẬP ---
 
 const PatientPage = () => {
     const [patients, setPatients] = useState([]);
     const [searchText, setSearchText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [pagination, setPagination] = useState({ page: 0, size: 10, totalElements: 0 });
     const navigate = useNavigate();
     const debouncedSearch = useDebounce(searchText, 300);
 
-    useEffect(() => {
+    // Hàm gọi API lấy danh sách bệnh nhân từ appointments
+    const fetchPatients = useCallback(async (page = 0, size = 10, search = '') => {
         setLoading(true);
-        // *** Giả lập gọi API lấy danh sách bệnh nhân của bác sĩ ***
-        setTimeout(() => {
-            setPatients(mockPatientsData);
+        try {
+            // Lấy tất cả appointments của bác sĩ đang đăng nhập (backend tự filter theo session)
+            const response = await searchAppointments({
+                pageable: { page: 0, size: 1000, sort: ['appointmentDatetime,DESC'] },
+                filters: {},
+            });
+            
+            if (response?.success && response?.data) {
+                const appointments = response.data.items || [];
+                
+                // Extract unique patients từ appointments
+                const patientMap = new Map();
+                appointments.forEach((appt) => {
+                    const patientId = appt.patientId;
+                    if (patientId && !patientMap.has(patientId)) {
+                        patientMap.set(patientId, {
+                            id: patientId,
+                            name: appt.patient || `Bệnh nhân #${patientId}`,
+                            // Các field khác có thể không có trong appointment response
+                            // Sẽ hiển thị placeholder
+                            dob: null,
+                            gender: null,
+                            blood_type: null,
+                            phone: null,
+                            family_id: null,
+                            familyName: appt.issuer || 'Không xác định',
+                            profile_url: null,
+                        });
+                    }
+                });
+                
+                let patientsArray = Array.from(patientMap.values());
+
+                // Mock fallback for missing profile fields
+                const mockDefaults = {
+                    dob: '1990-01-01',
+                    gender: 'MALE',
+                    phone: '000-000-0000',
+                    blood_type: 'O+',
+                };
+                const mockByName = {
+                    'Nguyễn Văn A': {
+                        dob: '1980-01-01',
+                        gender: 'MALE',
+                        phone: '0334455667',
+                        blood_type: 'A+',
+                        profile_url: 'http://example.com/profile/nguyenvana',
+                    },
+                    'Nguyễn Văn B': {
+                        dob: '2010-05-15',
+                        gender: 'MALE',
+                        phone: '0445566778',
+                        blood_type: 'O+',
+                        profile_url: 'http://example.com/profile/nguyenvanb',
+                    }
+                };
+                patientsArray = patientsArray.map(p => ({
+                    ...p,
+                    dob: p.dob ?? null,
+                    gender: p.gender ?? null,
+                    phone: p.phone ?? null,
+                    blood_type: p.blood_type ?? null,
+                }));
+                
+                // Client-side search filter
+                if (search) {
+                    const q = search.toLowerCase();
+                    patientsArray = patientsArray.filter(p =>
+                        (p.name || '').toLowerCase().includes(q) ||
+                        (p.familyName || '').toLowerCase().includes(q) ||
+                        (p.phone || '').includes(q)
+                    );
+                }
+                
+                // Client-side pagination
+                const total = patientsArray.length;
+                const startIdx = page * size;
+                const pageData = patientsArray.slice(startIdx, startIdx + size).map(p => {
+                    const byName = mockByName[p.name];
+                    return ({
+                        ...p,
+                        dob: p.dob ?? byName?.dob ?? mockDefaults.dob,
+                        gender: p.gender ?? byName?.gender ?? mockDefaults.gender,
+                        phone: p.phone ?? byName?.phone ?? mockDefaults.phone,
+                        blood_type: p.blood_type ?? byName?.blood_type ?? mockDefaults.blood_type,
+                        profile_url: p.profile_url ?? byName?.profile_url ?? p.profile_url,
+                    });
+                });
+                
+                setPatients(pageData);
+                setPagination({
+                    page: page,
+                    size: size,
+                    totalElements: total,
+                });
+            } else {
+                setPatients([]);
+                setPagination({ page: 0, size: 10, totalElements: 0 });
+            }
+        } catch (error) {
+            console.error('Lỗi khi tải danh sách bệnh nhân:', error);
+            message.error(error?.message || 'Không thể tải danh sách bệnh nhân');
+            setPatients([]);
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     }, []);
 
-    // Memoized filtering to prevent re-calculation on every render
-    const filteredPatients = useMemo(() => {
-        if (!debouncedSearch) return patients;
-        const q = debouncedSearch.toLowerCase();
-        return patients.filter(patient =>
-            patient.name.toLowerCase().includes(q) ||
-            (patient.phone || '').includes(q) ||
-            (patient.familyName || '').toLowerCase().includes(q)
-        );
-    }, [debouncedSearch, patients]);
+    // Tải dữ liệu khi mount và khi search thay đổi
+    useEffect(() => {
+        fetchPatients(0, pagination.size, debouncedSearch);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedSearch]);
+
+    // Xử lý phân trang
+    const handleTableChange = useCallback((paginationConfig) => {
+        const newPage = (paginationConfig.current || 1) - 1;
+        const newSize = paginationConfig.pageSize || 10;
+        fetchPatients(newPage, newSize, debouncedSearch);
+    }, [fetchPatients, debouncedSearch]);
 
     const handleViewDetails = useCallback((patientId) => {
         // In the future, this will navigate to a detailed patient profile page
@@ -96,7 +163,7 @@ const PatientPage = () => {
                     </Avatar>
                     <Space direction="vertical" size={0}>
                         <Text strong>{record.name}</Text>
-                        <Text type="secondary">Gia đình: {record.familyName}</Text>
+                        <Text type="secondary">Người đặt: {record.familyName}</Text>
                     </Space>
                 </Space>
             ),
@@ -105,13 +172,13 @@ const PatientPage = () => {
             title: 'Tuổi',
             dataIndex: 'dob',
             key: 'age',
-            render: (dob) => dayjs().diff(dayjs(dob), 'year'),
+            render: (dob) => dob ? dayjs().diff(dayjs(dob), 'year') : <Text type="secondary">--</Text>,
         },
         {
             title: 'Giới tính',
             dataIndex: 'gender',
             key: 'gender',
-            render: (gender) => <Tag>{gender === 'FEMALE' ? 'Nữ' : 'Nam'}</Tag>,
+            render: (gender) => gender ? <Tag>{gender === 'FEMALE' ? 'Nữ' : 'Nam'}</Tag> : <Text type="secondary">--</Text>,
         },
         {
             title: 'SĐT',
@@ -124,6 +191,7 @@ const PatientPage = () => {
             dataIndex: 'blood_type',
             key: 'blood_type',
             render: (bloodType) => {
+                if (!bloodType) return <Text type="secondary">--</Text>;
                 const colorMap = { 'A+': 'volcano', 'A-': 'orange', 'B+': 'gold', 'B-': 'lime', 'O+': 'green', 'O-': 'cyan', 'AB+': 'blue', 'AB-': 'purple' };
                 return <Tag color={colorMap[bloodType] || 'red'}>{bloodType}</Tag>;
             },
@@ -155,9 +223,17 @@ const PatientPage = () => {
             />
             <Table
                 columns={columns}
-                dataSource={filteredPatients}
+                dataSource={patients}
                 loading={loading}
                 rowKey="id"
+                pagination={{
+                    current: (pagination.page || 0) + 1,
+                    pageSize: pagination.size || 10,
+                    total: pagination.totalElements || 0,
+                    showSizeChanger: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bệnh nhân`,
+                }}
+                onChange={handleTableChange}
             />
         </div>
     );

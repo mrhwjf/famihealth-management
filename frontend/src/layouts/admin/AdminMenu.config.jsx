@@ -32,6 +32,11 @@ const AdminMenuConfig = () => {
 					key: "1-2",
 					label: "Bác sĩ",
 					path: "/admin/users/doctors"
+				},
+				{
+					key: "1-3",
+					label: "Mã mời gia đình",
+					path: "/admin/users/invite-code"
 				}
 			]
 
@@ -56,11 +61,16 @@ const AdminMenuConfig = () => {
 				},
 				{
 					key: "3-2",
+					label: "Hồ sơ y tế",
+					path: "/admin/data/medical-records"
+				},
+				{
+					key: "3-3",
 					label: "Mối quan hệ gia đình",
 					path: "/admin/data/family-relationships"
 				},
 				{
-					key: "3-3",
+					key: "3-4",
 					label: "Nhóm máu",
 					path: "/admin/data/blood-types"
 				}

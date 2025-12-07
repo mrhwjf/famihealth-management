@@ -4,6 +4,6 @@ import UserFamilyRoutes from "./UserFamilyRoutes";
 import DoctorRoutes from "./DoctorRoutes";
 import AuthRoutes from "./AuthRoutes";
 
-const Routes = [AuthRoutes, AdminRoutes, ErrorRoutes, DoctorRoutes , UserFamilyRoutes];
+const Routes = [AuthRoutes, AdminRoutes, ErrorRoutes, DoctorRoutes, UserFamilyRoutes];
 
 export default Routes;

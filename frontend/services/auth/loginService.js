@@ -85,6 +85,23 @@ export async function login(payload) {
         console.warn('Unable to persist currentUserId:', e);
       }
     }
+    // Persist role to sessionStorage to avoid stale localStorage confusion
+    const role = data?.data?.role || data?.role || data?.data?.user?.role;
+    if (role) {
+      try {
+        sessionStorage.setItem('currentUserRole', String(role));
+        console.log('[auth] saved currentUserRole:', role);
+      } catch (e) {
+        console.warn('Unable to persist currentUserRole:', e);
+      }
+    }
+    // Clear legacy localStorage auth keys that may show stale roles
+    try {
+      localStorage.removeItem('authUser');
+      localStorage.removeItem('authToken');
+    } catch (e) {
+      console.warn('Unable to clear legacy auth keys:', e);
+    }
   } catch (e) {
     console.warn('Unable to persist sessionId:', e);
   }
@@ -106,7 +123,7 @@ export async function login(payload) {
  * @param {string} headerName
  * @returns {{[key:string]: string}}
  */
-export function authHeaders(headerName = 'sessionId') {
+export function authHeaders(headerName = 'X-Session-Id') {
   const sid = getSessionId();
   return sid ? { [headerName]: sid } : {};
 }
@@ -118,7 +135,7 @@ export function authHeaders(headerName = 'sessionId') {
  * @param {RequestInit} options
  * @param {string} headerName
  */
-export async function fetchWithSession(url, options = {}, headerName = 'sessionId') {
+export async function fetchWithSession(url, options = {}, headerName = 'X-Session-Id') {
   const sid = getSessionId();
   const mergedHeaders = {
     ...(options.headers || {}),
