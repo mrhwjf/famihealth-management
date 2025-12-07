@@ -27,7 +27,7 @@ const Login = () => {
         navigate('/doctor');
       } else {
         message.success('Đăng nhập thành công');
-        navigate('/');
+        navigate('/user_family');
       }
     } catch (e) {
       console.error('Login error:', e);
@@ -42,7 +42,7 @@ const Login = () => {
         <Title level={3} style={{ textAlign: 'left' }}>Đăng nhập</Title>
         <Form name="login" layout="vertical" initialValues={{ remember: true }} onFinish={onFinish}>
           <Form.Item name="username" label="Tên đăng nhập" rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập' }]}>
-            <Input prefix={<UserOutlined />} placeholder="Tên đăng nhập hoặc email" />
+            <Input prefix={<UserOutlined />} placeholder="Số điện thoại hoặc email" />
           </Form.Item>
 
           <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu' }]}>

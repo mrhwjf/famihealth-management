@@ -81,10 +81,96 @@ const normalizeStatus = (raw) => {
     return { value: raw, label: raw };
   }
   const value =
-    raw.value ?? raw.code ?? raw.key ?? raw.id ?? raw.status ?? raw.name ?? null;
+    raw.value ??
+    raw.code ??
+    raw.key ??
+    raw.id ??
+    raw.status ??
+    raw.name ??
+    null;
   if (value === null) return null;
   const label = raw.label ?? raw.name ?? raw.displayName ?? String(value);
   return { ...raw, value, label };
+};
+
+const STORAGE_PREFIX = "fh-upcoming-appts";
+const buildStorageKey = (userId) =>
+  `${STORAGE_PREFIX}-${
+    userId !== null && userId !== undefined ? String(userId) : "guest"
+  }`;
+
+const loadStoredAppointments = (userId) => {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(buildStorageKey(userId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.warn("Không đọc được lịch hẹn từ localStorage:", err);
+    return [];
+  }
+};
+
+const saveStoredAppointments = (userId, items) => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(
+      buildStorageKey(userId),
+      JSON.stringify(Array.isArray(items) ? items : [])
+    );
+  } catch (err) {
+    console.warn("Không ghi được lịch hẹn vào localStorage:", err);
+  }
+};
+
+const appointmentIdentity = (item) =>
+  String(
+    item?.id ??
+      item?.localId ??
+      `${item?.patientId}-${item?.doctorId}-$
+        {item?.appointmentDatetime || item?.appointmentDate || item?.date || ""}
+      `
+  );
+
+const upsertStoredAppointment = (userId, appointment, limit = 50) => {
+  if (!appointment) return;
+  const existing = loadStoredAppointments(userId);
+  const filtered = existing.filter(
+    (item) => appointmentIdentity(item) !== appointmentIdentity(appointment)
+  );
+  filtered.unshift({
+    ...appointment,
+    localId: appointment.localId ?? Date.now(),
+  });
+  saveStoredAppointments(userId, filtered.slice(0, limit));
+};
+
+const mergeAppointmentLists = (...lists) => {
+  const map = new Map();
+  lists
+    .flat()
+    .filter(Boolean)
+    .forEach((item) => {
+      const key = appointmentIdentity(item);
+      if (!map.has(key)) map.set(key, item);
+    });
+  return Array.from(map.values());
+};
+
+const extractAppointments = (payload) => {
+  if (!payload) return [];
+  const candidates = [
+    payload?.data?.items,
+    payload?.data?.data,
+    payload?.data,
+    payload?.items,
+    payload,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+  }
+  return [];
 };
 
 export default function Appointments() {
@@ -136,6 +222,13 @@ export default function Appointments() {
     return map;
   };
 
+  useEffect(() => {
+    const stored = loadStoredAppointments(currentUserId);
+    if (stored.length > 0) {
+      setEventsByDate(buildEventsMap(stored));
+    }
+  }, [currentUserId]);
+
   // load doctors and upcoming appointments
   useEffect(() => {
     let mounted = true;
@@ -179,9 +272,12 @@ export default function Appointments() {
           setAppointmentStatuses(statuses);
         }
 
-        if (mounted && apptRes?.data?.items) {
-          const map = buildEventsMap(apptRes.data.items);
-          setEventsByDate(map);
+        if (mounted && apptRes) {
+          const serverItems = extractAppointments(apptRes);
+          const stored = loadStoredAppointments(currentUserId);
+          const merged = mergeAppointmentLists(serverItems, stored);
+          setEventsByDate(buildEventsMap(merged));
+          saveStoredAppointments(currentUserId, merged);
         }
       } catch (err) {
         console.error("Failed to load appointments/doctors", err);
@@ -275,12 +371,14 @@ export default function Appointments() {
       const payload = {
         patientId: Number(values.patientId),
         doctorId: Number(values.doctorId),
-        appointmentDatetime: dayjs(values.appointmentDatetime).toISOString(),
+        appointmentDatetime: dayjs(values.appointmentDatetime).format(
+          "YYYY-MM-DDTHH:mm:ss"
+        ),
         reason: values.reason || "",
         notes: values.notes || "",
         status: values.status || defaultStatus,
       };
-
+      console.log(payload);
       setLoading(true);
 
       let created = null;
@@ -310,6 +408,7 @@ export default function Appointments() {
         source: "appointment",
         meta: created,
       });
+      upsertStoredAppointment(currentUserId, created);
 
       message.success("Đặt lịch thành công (hiển thị cục bộ).");
       setModalVisible(false);

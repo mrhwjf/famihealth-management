@@ -62,18 +62,7 @@ const User_FamilyMenuConfig = () => {
       icon: <SettingOutlined />,
       path: "/user_family/settings",
     },
-    {
-      key: "8",
-      label: <span style={{ color: "white", fontWeight: 600 }}>Đăng xuất</span>,
-      icon: <LogoutOutlined style={{ color: "white" }} />,
-      path: "/user_family/signout",
-      style: {
-        backgroundColor: "#ff4d4f",
-        borderRadius: 6,
-        color: "white",
-      },
-      className: "logout-menu-item",
-    },
+    // Logout handled globally by ResponsiveMenu footer
   ];
 
   return items;

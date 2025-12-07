@@ -1,13 +1,14 @@
 // Appointments Service: gọi các API quản lý lịch hẹn
 // Swagger endpoints:
-// - GET    /api/v1/appointments/{appointmentId}
-// - PUT    /api/v1/appointments/{appointmentId}
-// - DELETE /api/v1/appointments/{appointmentId}
-// - GET    /api/v1/appointments
-// - POST   /api/v1/appointments
-// - POST   /api/v1/appointments/{appointmentId}/complete
-// - GET    /api/v1/appointments/form-data
-// - GET    /api/v1/appointments/filter-options
+// - GET    /api/v1/appointments/{appointmentId}              – Lấy chi tiết lịch hẹn
+// - PUT    /api/v1/appointments/{appointmentId}              – Cập nhật lịch hẹn
+// - DELETE /api/v1/appointments/{appointmentId}              – Xóa lịch hẹn
+// - GET    /api/v1/appointments                              – Tìm kiếm lịch hẹn (search)
+// - POST   /api/v1/appointments                              – Tạo mới lịch hẹn
+// - POST   /api/v1/appointments/{appointmentId}/complete     – Hoàn thành lịch hẹn
+// - GET    /api/v1/appointments/{appointmentId}/form-data    – Lấy dữ liệu chỉnh sửa (EDIT)
+// - GET    /api/v1/appointments/form-data                    – Khởi tạo form-data (CREATE)
+// - GET    /api/v1/appointments/filter-options               – Lấy tùy chọn bộ lọc
 
 import { authHeaders } from './auth/loginService.js';
 
@@ -52,11 +53,12 @@ export async function deleteAppointment({ appointmentId, headerName = 'X-Session
 
 export async function searchAppointments({ pageable = { page: 0, size: 10, sort: [] }, filters = {}, headerName = 'X-Session-Id' } = {}) {
   const params = new URLSearchParams();
-  params.append('pageable.page', pageable?.page ?? 0);
-  params.append('pageable.size', pageable?.size ?? 10);
+  // Align with Swagger: use page, size, sort (not pageable.*)
+  params.append('page', pageable?.page ?? 0);
+  params.append('size', pageable?.size ?? 10);
   (Array.isArray(pageable?.sort) ? pageable.sort : [pageable?.sort])
     .filter(Boolean)
-    .forEach((s) => params.append('pageable.sort', s));
+    .forEach((s) => params.append('sort', s));
   Object.entries(filters || {})
     .filter(([, v]) => v !== undefined && v !== null && v !== '')
     .forEach(([k, v]) => {
@@ -90,6 +92,16 @@ export async function getAppointmentFormData({ headerName = 'X-Session-Id' } = {
   return handleResponse(resp);
 }
 
+/**
+ * GET /api/v1/appointments/{appointmentId}/form-data
+ * Lấy dữ liệu chỉnh sửa lịch hẹn (edit form-data)
+ */
+export async function getAppointmentEditFormData({ appointmentId, headerName = 'X-Session-Id' }) {
+  const url = `${BASE_URL}/${encodeURIComponent(appointmentId)}/form-data`;
+  const resp = await fetch(url, { method: 'GET', headers: { ...authHeaders(headerName), Accept: '*/*' } });
+  return handleResponse(resp);
+}
+
 export async function getAppointmentFilterOptions({ headerName = 'X-Session-Id' } = {}) {
   const url = `${BASE_URL}/filter-options`;
   const resp = await fetch(url, { method: 'GET', headers: { ...authHeaders(headerName), Accept: '*/*' } });
@@ -104,5 +116,6 @@ export default {
   createAppointment,
   completeAppointment,
   getAppointmentFormData,
+  getAppointmentEditFormData,
   getAppointmentFilterOptions,
 };

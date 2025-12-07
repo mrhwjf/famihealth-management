@@ -10,6 +10,16 @@ import { authHeaders } from './auth/loginService.js';
 
 const BASE_URL = '/api/v1/doctors';
 
+function buildPageableWithPrefix(prefix = 'pageable.', { page = 0, size = 10, sort = [] } = {}) {
+  const params = new URLSearchParams();
+  params.append(`${prefix}page`, page);
+  params.append(`${prefix}size`, size);
+  (Array.isArray(sort) ? sort : [sort])
+    .filter(Boolean)
+    .forEach((s) => params.append(`${prefix}sort`, s));
+  return params;
+}
+
 async function handleResponse(resp) {
   // cố gắng parse JSON, nếu thất bại thì lấy text để hiển thị lỗi rõ ràng
   let data;
@@ -210,4 +220,93 @@ export async function updateDoctor(id, { user, doctorProfile }) {
   return handleResponse(resp);
 }
 
-export default { createDoctor, updateDoctor, createDoctorTwoStep };
+// Gửi hồ sơ thẩm định lần đầu
+export async function submitVerification({ doctorId, data, headerName = 'X-Session-Id' }) {
+  if (doctorId == null || doctorId === '') throw new Error('Thiếu doctorId');
+  const url = `${BASE_URL}/${encodeURIComponent(doctorId)}/verification/submit`;
+  const options = {
+    method: 'POST',
+    headers: {
+      ...authHeaders(headerName),
+      Accept: 'application/json',
+    },
+  };
+  if (data !== undefined) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(data);
+  }
+  const resp = await fetch(url, options);
+  return handleResponse(resp);
+}
+
+// Gửi lại hồ sơ sau khi bị từ chối
+export async function resubmitVerification({ doctorId, data, headerName = 'X-Session-Id' }) {
+  if (doctorId == null || doctorId === '') throw new Error('Thiếu doctorId');
+  const url = `${BASE_URL}/${encodeURIComponent(doctorId)}/verification/resubmit`;
+  const options = {
+    method: 'POST',
+    headers: {
+      ...authHeaders(headerName),
+      Accept: 'application/json',
+    },
+  };
+  if (data !== undefined) {
+    options.headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(data);
+  }
+  const resp = await fetch(url, options);
+  return handleResponse(resp);
+}
+
+// Xem lần thẩm định gần nhất của một bác sĩ
+export async function getLatestVerification({ doctorId, headerName = 'X-Session-Id' }) {
+  if (doctorId == null || doctorId === '') throw new Error('Thiếu doctorId');
+  const url = `${BASE_URL}/${encodeURIComponent(doctorId)}/verification/latest`;
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: { ...authHeaders(headerName), Accept: '*/*' },
+  });
+  return handleResponse(resp);
+}
+
+// Xem lịch sử thẩm định (có phân trang)
+export async function getVerificationHistory({
+  doctorId,
+  pageable = { page: 0, size: 10, sort: [] },
+  headerName = 'X-Session-Id',
+}) {
+  if (doctorId == null || doctorId === '') throw new Error('Thiếu doctorId');
+  const params = buildPageableWithPrefix('pageable.', {
+    page: pageable?.page ?? 0,
+    size: pageable?.size ?? 10,
+    sort: pageable?.sort ?? [],
+  });
+  const url = `${BASE_URL}/${encodeURIComponent(doctorId)}/verification/history?${params.toString()}`;
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: { ...authHeaders(headerName), Accept: '*/*' },
+  });
+  return handleResponse(resp);
+}
+
+// Xem chi tiết một lần thẩm định theo id
+export async function getVerificationDetail({ verificationId, headerName = 'X-Session-Id' }) {
+  if (verificationId == null || verificationId === '') throw new Error('Thiếu verificationId');
+  const url = `${BASE_URL}/verification/${encodeURIComponent(verificationId)}`;
+  const resp = await fetch(url, {
+    method: 'GET',
+    headers: { ...authHeaders(headerName), Accept: '*/*' },
+  });
+  return handleResponse(resp);
+}
+
+export default {
+  createDoctor,
+  updateDoctor,
+  createDoctorTwoStep,
+  submitVerification,
+  resubmitVerification,
+  getLatestVerification,
+  getVerificationHistory,
+  getVerificationDetail,
+};
